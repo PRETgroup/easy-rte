@@ -58,6 +58,11 @@ type Policy struct {
 //PState is a state in the policy specification of an enforcerFB
 type PState string
 
+//Name returns the name of a PState
+func (p PState) Name() string {
+	return string(p)
+}
+
 //PTransition is a transition between PState in a Policy (mealy machine transitions)
 type PTransition struct {
 	Source      PState

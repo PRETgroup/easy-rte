@@ -8,10 +8,10 @@ const rtecTemplate = `{{define "_policyIn"}}{{$block := .}}
 	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
 	{{else}}{{/* this is where the policy comes in */}}//INPUT POLICY {{$pol.Name}} BEGIN 
 		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st}}:
-				{{range $tri, $tr := $pfbEnf.InputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st}}{{/*
+			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+				{{range $tri, $tr := $pfbEnf.InputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getCECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}})) {
+				if({{$cond := getCECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) {
 					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					//select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr true}}
@@ -34,10 +34,10 @@ const rtecTemplate = `{{define "_policyIn"}}{{$block := .}}
 	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
 	{{else}}{{/* this is where the policy comes in */}}//OUTPUT POLICY {{$pol.Name}} BEGIN 
 		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st}}:
-				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st}}{{/*
+			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getCECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}})) {
+				if({{$cond := getCECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) {
 					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					//select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr false}}
@@ -56,10 +56,10 @@ const rtecTemplate = `{{define "_policyIn"}}{{$block := .}}
 
 		//select transition to advance state
 		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st}}:
-				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st}}{{/*
+			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getCECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}})) {
+				if({{$cond := getCECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) {
 					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					me->_policy_{{$pol.Name}}_state = POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$tr.Destination}};
 				} {{end}}{{end}}
