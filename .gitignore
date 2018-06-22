@@ -1,0 +1,11 @@
+.vscode
+*.exe
+*.out
+*.wca
+*.csv
+*.out.json
+*.out.govar
+*.swp
+
+*.xml
+main
