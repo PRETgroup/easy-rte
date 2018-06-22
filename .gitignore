@@ -8,4 +8,10 @@
 *.swp
 
 *.xml
-main
+main/main
+
+easy-rte-c
+easy-rte-parser
+
+example/*
+!ab5.erte

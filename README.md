@@ -53,9 +53,13 @@ However, we don't want these violations to occur.
 So, we shall convert the _policy_ to an _enforcer_, which is capable of modifying the I/O such that a violation cannot occur.
 
 In _easy-rte_, this is done in two steps. Firstly, we convert the _erte_ file into an equivalent policy XML file (which makes it easier to understand, and allows portability between tools).
-* TODO: `put the parser instruction`
+* `./easy-rte-parser -i example -o example`
 
 Then, we convert this policy XML file into an _enforcer_, which is written in C. The process for doing this is provided in the linked paper, in the About section of this README.
-* TODO: `put the compiler instruction`
+* `./easy-rte-c -i example -o example`
 
+## Build instructions
 
+Download and install the latest version of [Go](https://golang.org/doc/install).
+
+Then, download this repository, and run `make`.
