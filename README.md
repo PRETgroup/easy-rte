@@ -1,11 +1,25 @@
 # easy-rte
 
-WIP
+## About
+This project provides an easy-to-use implementation of _bi-directional Runtime Enforcement_, based on the semantics originally presented in [Runtime Enforcement of Cyber-Physical Systems](https://dl-acm-org.ezproxy.auckland.ac.nz/citation.cfm?id=3126500) (ACM Transactions on Embedded Computing Systems (TECS) 2017).
 
-This is a re-implementation of the enforcer semantics from "the EMSOFT paper" and goFB, such that it can be easily used with normal C functions.
+While the original implementation was restricted to simple _boolean_ arguments only, and was implemented in Python for use 
+with SCCharts, this project presents a more generalised any-type enforcement system, which can be used with any C project. 
+_easy-rte_ was ported from [goFB](https://github.com/PRETgroup/goFB), which implemented the semantics in this way, but restricted them for use with IEC 61499 function blocks.
 
-Example: (This is the AB5 example)
+## What is Runtime Enforcement?
 
+TODO
+
+## Example of Use
+
+Imagine a function which inputs boolean `A` and outputs boolean `B`. 
+Let's give it the following properties:
+1. A and B cannot happen simultaneously.
+2. A and B alternate starting with an A. 
+3. B should be true within 5 ticks after an occurance of A.
+
+We can present this as the following _easy-rte_ policy format:
 ```
 function AB5Function;
 interface of AB5Function {
@@ -34,4 +48,14 @@ policy AB5 of AB5Function {
 }
 ```
 
-TODO: show build steps to get from the INPUT to a usable C file
+As can be seen, this can be thought of as a simple mealy finite state machine, which provides the rules for operation and when a transition to violation might occur.
+However, we don't want these violations to occur. 
+So, we shall convert the _policy_ to an _enforcer_, which is capable of modifying the I/O such that a violation cannot occur.
+
+In _easy-rte_, this is done in two steps. Firstly, we convert the _erte_ file into an equivalent policy XML file (which makes it easier to understand, and allows portability between tools).
+* TODO: `put the parser instruction`
+
+Then, we convert this policy XML file into an _enforcer_, which is written in C. The process for doing this is provided in the linked paper, in the About section of this README.
+* TODO: `put the compiler instruction`
+
+
