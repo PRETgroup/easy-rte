@@ -53,16 +53,22 @@ func (c *Converter) ConvertAll() ([]OutputFile, error) {
 	finishedConversions := make([]OutputFile, 0, len(c.Funcs))
 
 	//convert all functions
-	for i := 0; i < len(c.Funcs); i++ {
+	templates := []string{"functionC", "functionH"}
+	for _, templateName := range templates {
+		for i := 0; i < len(c.Funcs); i++ {
 
-		output := &bytes.Buffer{}
-		templateName := "functionRun"
+			output := &bytes.Buffer{}
+			if err := c.templates.ExecuteTemplate(output, templateName, TemplateData{FunctionIndex: i, Functions: c.Funcs}); err != nil {
+				return nil, errors.New("Couldn't format template (fb) of" + c.Funcs[i].Name + ": " + err.Error())
+			}
 
-		if err := c.templates.ExecuteTemplate(output, templateName, TemplateData{FunctionIndex: i, Functions: c.Funcs}); err != nil {
-			return nil, errors.New("Couldn't format template (fb) of" + c.Funcs[i].Name + ": " + err.Error())
+			extension := "c"
+			if templateName == "functionH" {
+				extension = "h"
+			}
+
+			finishedConversions = append(finishedConversions, OutputFile{Name: "F_" + c.Funcs[i].Name, Extension: extension, Contents: output.Bytes()})
 		}
-
-		finishedConversions = append(finishedConversions, OutputFile{Name: "F_" + c.Funcs[i].Name, Extension: "c", Contents: output.Bytes()})
 	}
 
 	return finishedConversions, nil
