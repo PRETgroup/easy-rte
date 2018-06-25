@@ -49,19 +49,19 @@ func getCECCTransitionCondition(function rtedef.EnforcedFunction, trans string) 
 		}
 
 		//check to see if it is input data
-		if function.Inputs != nil {
-			for _, Var := range function.Inputs {
+		if function.InputVars != nil {
+			for _, Var := range function.InputVars {
 				if Var.Name == in {
-					return "me->" + in
+					return "inputs." + in
 				}
 			}
 		}
 
 		//check to see if it is output data
-		if function.Outputs != nil {
-			for _, Var := range function.Outputs {
+		if function.OutputVars != nil {
+			for _, Var := range function.OutputVars {
 				if Var.Name == in {
-					return "me->" + in
+					return "outputs->" + in
 				}
 			}
 		}

@@ -15,3 +15,5 @@ easy-rte-parser
 
 example/*
 !ab5.erte
+!example_main.c
+example_AB5

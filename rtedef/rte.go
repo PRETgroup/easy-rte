@@ -2,6 +2,7 @@ package rtedef
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -16,22 +17,22 @@ type EnforcedFunction struct {
 
 //InterfaceList stores the IO
 type InterfaceList struct {
-	Inputs  []Variable `xml:"Interface>Input"`
-	Outputs []Variable `xml:"Interface>Output"`
+	InputVars  []Variable `xml:"Interface>Input"`
+	OutputVars []Variable `xml:"Interface>Output"`
 }
 
 //HasIONamed will check a given InterfaceList to see if it has an output of that name
 func (il InterfaceList) HasIONamed(input bool, s string) bool {
 	if input {
-		for i := 0; i < len(il.Inputs); i++ {
-			if il.Inputs[i].Name == s {
+		for i := 0; i < len(il.InputVars); i++ {
+			if il.InputVars[i].Name == s {
 				return true
 			}
 		}
 		return false
 	}
-	for i := 0; i < len(il.Outputs); i++ {
-		if il.Outputs[i].Name == s {
+	for i := 0; i < len(il.OutputVars); i++ {
+		if il.OutputVars[i].Name == s {
 			return true
 		}
 	}
@@ -45,6 +46,26 @@ type Variable struct {
 	ArraySize    string `xml:"ArraySize,attr,omitempty"`
 	InitialValue string `xml:"InitialValue,attr,omitempty"`
 	Comment      string `xml:"Comment,attr"`
+}
+
+//GetInitialArray returns a formatted initial array if there is one to do so
+func (v Variable) GetInitialArray() []string {
+	//if cannot parse an array size then give up
+	_, err := strconv.Atoi(v.ArraySize)
+	if err != nil {
+		return nil
+	}
+
+	//remove everything except commas and values
+	raw := v.InitialValue
+	raw = strings.TrimPrefix(raw, "[")
+	raw = strings.TrimSuffix(raw, "]")
+
+	raws := strings.Split(raw, ",")
+	for i := 0; i < len(raws); i++ {
+		raws[i] = strings.Trim(raws[i], " ")
+	}
+	return raws
 }
 
 //Policy stores a policy, i.e. the vars that must be kept
@@ -85,10 +106,10 @@ func NewEnforcedFunction(name string) EnforcedFunction {
 //AddIO adds the provided IO to a given EnforcedFunction, while checking to make sure that each name is unique in the interface
 func (f *EnforcedFunction) AddIO(isInput bool, intNames []string, typ string, size string, initialValue string) error {
 	seenNames := make(map[string]bool)
-	for _, inp := range f.Inputs {
+	for _, inp := range f.InputVars {
 		seenNames[inp.Name] = true
 	}
-	for _, outp := range f.Outputs {
+	for _, outp := range f.OutputVars {
 		seenNames[outp.Name] = true
 	}
 
@@ -106,10 +127,10 @@ func (f *EnforcedFunction) AddIO(isInput bool, intNames []string, typ string, si
 		}
 	}
 	if isInput {
-		f.Inputs = append(f.Inputs, vars...)
+		f.InputVars = append(f.InputVars, vars...)
 		return nil
 	}
-	f.Outputs = append(f.Outputs, vars...)
+	f.OutputVars = append(f.OutputVars, vars...)
 	return nil
 }
 
