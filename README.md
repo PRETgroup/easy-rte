@@ -86,14 +86,14 @@ So, we shall convert the _policy_ to an _enforcer_, which is capable of modifyin
 The theory of converting policies to enforcers is covered in the companion paper [Runtime Enforcement of Cyber-Physical Systems](https://dl-acm-org.ezproxy.auckland.ac.nz/citation.cfm?id=3126500).
 
 With _easy-rte_, this process is completed automatically in two steps. Firstly, we convert the _erte_ file into an equivalent policy XML file (which makes it easier to understand, and allows portability between tools).
-* `./easy-rte-parser -i example -o example`
+* `./easy-rte-parser -i example/ab5 -o example/ab5`
 
 Then, we convert this policy XML file into an _enforcer_, which is written in C. 
-* `./easy-rte-c -i example -o example`
+* `./easy-rte-c -i example/ab5 -o example/ab5`
 
 Now, we can provide a `main.c` file which has our controller function in it, and then compile the project together.
 
-This entire example is provided in the `/example` folder of this repository, including an example top level file, and can be built from the root directory using `make example`.
+This entire example is provided in the `/example/ab5` folder of this repository, including an example top level file, and can be built from the root directory using `make example_ab5`.
 
 ## Build instructions
 
