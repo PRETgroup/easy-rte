@@ -51,16 +51,29 @@ policy AB5 of AB5Function {
 	}
 
 	states {
-		s0 {	//first state is initial, and represents "We're waiting for an A"
-			-> s0 on (!A and !B): v := 0;			//if we receive neither A nor B, do nothing
-			-> s1 on (A and !B): v := 0;			//if we receive an A only, head to state s1
-			-> violation on ((!A and B) or (A and B));	//if we receive a B, or an A and a B (i.e. if we receive a B) then VIOLATION
+
+		//first state is initial, and represents "We're waiting for an A"
+		s0 {
+			//if we receive neither A nor B, do nothing														
+			-> s0 on (!A and !B): v := 0;
+
+			//if we receive an A only, head to state s1							
+			-> s1 on (A and !B): v := 0;
+			
+			//if we receive a B, or an A and a B (i.e. if we receive a B) then VIOLATION							
+			-> violation on ((!A and B) or (A and B));	
 		}
 
-		s1 {	//s1 is "we're waiting for a B, and it needs to get here within 5 ticks"
-			-> s1 on (!A and !B and v < 5);				//if we receive nothing, and we aren't over-time, then we do nothing
-			-> s0 on (!A and B);					//if we receive a B only, head to state s0
-			-> violation on ((v >= 5) or (A and B) or (A and !B));	//if we go overtime, or we receive another A, then VIOLATION
+		//s1 is "we're waiting for a B, and it needs to get here within 5 ticks"
+		s1 {
+			//if we receive nothing, and we aren't over-time, then we do nothing														
+			-> s1 on (!A and !B and v < 5);	
+
+			//if we receive a B only, head to state s0					
+			-> s0 on (!A and B);
+
+			//if we go overtime, or we receive another A, then VIOLATION			
+			-> violation on ((v >= 5) or (A and B) or (A and !B));	
 		}
 	}
 }
