@@ -483,7 +483,7 @@ func SplitExpressionsOnOr(expr stconverter.STExpression) []stconverter.STExpress
 //The top level should be one of the following
 //if VARIABLE ONLY, 			return VARIABLE = 1
 //if NOT(VARIABLE) ONLY, 		return VARIABLE = 0
-//if VARIABLE == EXPRESSION, 	return VARIABLE = VARIABLE
+//if VARIABLE == EXPRESSION, 	return VARIABLE = EXPRESSION
 //if VARIABLE > EXPRESSION, 	return VARIABLE = EXPRESSION + 1
 //if VARIABLE >= EXPRESSION, 	return VARIABLE = EXPRESSION
 //if VARIABLE < EXPRESSION, 	return VARIABLE = EXPRESSION - 1
@@ -500,7 +500,8 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, inp stconverter.STExp
 	//TODO: remove TIMERS from problem space if present
 
 	op := problem.HasOperator()
-	if op == nil { //if VARIABLE ONLY, 			return VARIABLE = 1
+	//if VARIABLE ONLY, 			return VARIABLE = 1
+	if op == nil {
 		return stconverter.STExpressionOperator{
 			Operator: stconverter.FindOp(":="),
 			Arguments: []stconverter.STExpression{
@@ -510,7 +511,8 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, inp stconverter.STExp
 	}
 	args := problem.GetArguments()
 
-	if op.GetToken() == "not" && len(args) == 1 { //if NOT(VARIABLE) ONLY, 		return VARIABLE = 1
+	//if NOT(VARIABLE) ONLY, 		return VARIABLE = 1
+	if op.GetToken() == "not" && len(args) == 1 {
 		return stconverter.STExpressionOperator{
 			Operator: stconverter.FindOp(":="),
 			Arguments: []stconverter.STExpression{
@@ -519,6 +521,82 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, inp stconverter.STExp
 			}}
 	}
 
+	//if VARIABLE == EXPRESSION, 	return VARIABLE = EXPRESSION
+	if op.GetToken() == "=" && len(args) == 2 {
+		return stconverter.STExpressionOperator{
+			Operator:  stconverter.FindOp(":="),
+			Arguments: args,
+		}
+	}
+
+	//if VARIABLE > EXPRESSION, 	return VARIABLE = EXPRESSION + 1
+	if op.GetToken() == ">" && len(args) == 2 {
+		return stconverter.STExpressionOperator{
+			Operator: stconverter.FindOp(":="),
+			Arguments: []stconverter.STExpression{
+				stconverter.STExpressionOperator{
+					Operator: stconverter.FindOp("+"),
+					Arguments: []stconverter.STExpression{
+						stconverter.STExpressionValue{Value: "1"},
+						args[1],
+					},
+				},
+				stconverter.STExpressionValue{Value: args[0].HasValue()},
+			},
+		}
+	}
+
+	//if VARIABLE >= EXPRESSION, 	return VARIABLE = EXPRESSION
+	if op.GetToken() == ">=" && len(args) == 2 {
+		return stconverter.STExpressionOperator{
+			Operator:  stconverter.FindOp(":="),
+			Arguments: args,
+		}
+	}
+
+	//if VARIABLE < EXPRESSION, 	return VARIABLE = EXPRESSION - 1
+	if op.GetToken() == ">" && len(args) == 2 {
+		return stconverter.STExpressionOperator{
+			Operator: stconverter.FindOp(":="),
+			Arguments: []stconverter.STExpression{
+				stconverter.STExpressionOperator{
+					Operator: stconverter.FindOp("-"),
+					Arguments: []stconverter.STExpression{
+						stconverter.STExpressionValue{Value: "1"},
+						args[1],
+					},
+				},
+				stconverter.STExpressionValue{Value: args[0].HasValue()},
+			},
+		}
+	}
+
+	//if VARIABLE <= EXPRESSION, 	return VARIABLE = EXPRESSION
+	if op.GetToken() == "<=" && len(args) == 2 {
+		return stconverter.STExpressionOperator{
+			Operator:  stconverter.FindOp(":="),
+			Arguments: args,
+		}
+	}
+
+	//if VARIABLE != EXPRESSION,	return VARIABLE = EXPRESSION + 1
+	if op.GetToken() == "<>" && len(args) == 2 {
+		return stconverter.STExpressionOperator{
+			Operator: stconverter.FindOp(":="),
+			Arguments: []stconverter.STExpression{
+				stconverter.STExpressionOperator{
+					Operator: stconverter.FindOp("+"),
+					Arguments: []stconverter.STExpression{
+						stconverter.STExpressionValue{Value: "1"},
+						args[1],
+					},
+				},
+				stconverter.STExpressionValue{Value: args[0].HasValue()},
+			},
+		}
+	}
+
+	//If still here, we don't know what to do
 	fmt.Println("WARNING: I couldn't solve guard \"", stconverter.CCompileExpression(problem), "\"")
 
 	return nil
