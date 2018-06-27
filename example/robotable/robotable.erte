@@ -1,0 +1,41 @@
+function Robotable;
+interface of Robotable {
+	//in here means that they're going from PLANT to CONTROLLER
+	//The inputs to the controller is the requested X, Y location, as well as the sensed X, Y location
+	in int16_t reqLocX;  
+	in int16_t reqLocY;	
+	in int16_t curLocX := 0; //0, 0 is the middle of the table
+	in int16_t curLocY := 0;
+
+	//out here means that they're going from CONTROLLER to PLANT
+	//The outputs from the controller are the direction controllers for X and Y.
+	//These are limited to {-1, 0, 1}
+	out int16_t driveX := 0;
+	out int16_t driveY := 0;
+}
+
+policy stayOnTable of Robotable {
+	internals {
+		int16_t minX := 10;
+		int16_t maxX := 10;
+		int16_t minY := 10;
+		int16_t maxY := 10;
+	}
+
+	states {
+
+		s0 {
+			-> violation on ((reqLocX < minX) or (reqLocX > maxX) or (reqLocY < minY) or (reqLocY > maxY));
+
+			-> violation on (((curLocX + driveX) < minX) or ((curLocX + driveX) > maxX) or ((curLocY + driveY) < minY) or ((curLocY + driveY) > maxY));
+			
+			-> violation on ((driveX < -1) or (driveX > 1) or (driveY < -1) or (driveY > 1));
+
+			-> s0 on (
+				(reqLocX >= minX) and (reqLocX <= maxX) and (reqLocY >= minY) and (reqLocY <= maxY) and 
+				((curLocX + driveX) >= minX) and ((curLocX + driveX) <= maxX) and ((curLocY + driveY) >= minY) and ((curLocY + driveY) <= maxY)) and
+				(driveX >= -1) and (driveX >= 1) and (driveY <= -1) and (driveY >= 1)
+			);
+		}
+	}
+}

@@ -141,7 +141,6 @@ func (f *EnforcedFunction) AddPolicy(name string) {
 
 //AddDataInternals adds data internals to a efb, and adds the InternalVars section if it is nil
 func (efb *Policy) AddDataInternals(intNames []string, typ string, size string, initialValue string) *Policy {
-	typ = strings.ToUpper(typ)
 	for _, iname := range intNames {
 		efb.InternalVars = append(efb.InternalVars, Variable{Name: iname, Type: typ, ArraySize: size, InitialValue: initialValue})
 	}

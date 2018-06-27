@@ -16,7 +16,7 @@ example/ab5/F_ab5Function.c: easy-rte-c easy-rte-parser example/ab5/ab5.erte
 	./easy-rte-c -i example/ab5 -o example/ab5
 
 example_robotable: example/robotable/robotable_main.c example/robotable/F_Robotable.c
-	gcc example/robotable/robotable_main.c example/robotable/F_Robotable.c -o example_Robotable
+	gcc example/robotable/robotable_main.c example/robotable/F_Robotable.c -o example_robotable
 
 example/robotable/F_Robotable.c: easy-rte-c easy-rte-parser example/robotable/robotable.erte
 	./easy-rte-parser -i example/robotable -o example/robotable
