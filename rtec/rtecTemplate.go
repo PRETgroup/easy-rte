@@ -16,7 +16,8 @@ const rtecTemplate = `{{define "_policyIn"}}{{$block := .}}
 					//select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr true}}
 					{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
-					{{if $solution.Expression}}{{$sol := getCECCTransitionCondition $block $solution.Expression}}{{$sol.IfCond}};{{end}}
+					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getCECCTransitionCondition $block $sole}}{{$sol.IfCond}};
+					{{end}}
 				} {{end}}{{end}}
 				
 				break;
@@ -42,7 +43,8 @@ const rtecTemplate = `{{define "_policyIn"}}{{$block := .}}
 					//select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr false}}
 					{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
-					{{if $solution.Expression}}{{$sol := getCECCTransitionCondition $block $solution.Expression}}{{$sol.IfCond}};{{end}}
+					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getCECCTransitionCondition $block $sole}}{{$sol.IfCond}};
+					{{end}}
 				} {{end}}{{end}}
 
 				break;

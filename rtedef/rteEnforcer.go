@@ -121,8 +121,8 @@ func (pol *PEnforcerPolicy) RemoveDuplicateTransitions() {
 
 //STExpressionSolution stores a solution to a violation transition
 type STExpressionSolution struct {
-	Expression string
-	Comment    string
+	Expressions []string
+	Comment     string
 }
 
 //SolveViolationTransition will attempt to solve a given transition
@@ -153,21 +153,25 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 
 	// Make sure there's at least one solution
 	if len(posSolTrs) == 0 {
-		return STExpressionSolution{Expression: "", Comment: "No possible solutions!"}
+		return STExpressionSolution{Expressions: nil, Comment: "No possible solutions!"}
 	}
 
 	//1. Check to see if there is a non-violating transition with an equivalent guard to the violating transition
 	for _, posSolTr := range posSolTrs {
 		if reflect.DeepEqual(tr.STGuard, posSolTr.STGuard) {
-			return STExpressionSolution{Expression: "", Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" which has an equivalent guard, so no action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
+			return STExpressionSolution{Expressions: nil, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" which has an equivalent guard, so no action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 		}
 	}
 
 	//2. Select first solution
 	posSolTr := posSolTrs[0]
-	solution := SolveSTExpression(enf.interfaceList, inputPolicy, tr.STGuard, posSolTr.STGuard)
+	solutions := SolveSTExpression(enf.interfaceList, inputPolicy, tr.STGuard, posSolTr.STGuard)
+	solutionExpressions := make([]string, len(solutions))
+	for i, soln := range solutions {
+		solutionExpressions[i] = stconverter.CCompileExpression(soln)
+	}
 
-	return STExpressionSolution{Expression: stconverter.CCompileExpression(solution), Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
+	return STExpressionSolution{Expressions: solutionExpressions, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 
 }
 
@@ -530,7 +534,7 @@ func DeepGetValues(expr stconverter.STExpression) []string {
 //if VARIABLE <= EXPRESSION, 	return VARIABLE = EXPRESSION
 //if VARIABLE != EXPRESSION,	return VARIABLE = EXPRESSION + 1
 //otherwise, return nil (can't solve)
-func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stconverter.STExpression, solutionTransition stconverter.STExpression) stconverter.STExpression {
+func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stconverter.STExpression, solutionTransition stconverter.STExpression) []stconverter.STExpression {
 
 	//first we need to project the solutionTransition over the problemTransition
 
@@ -565,7 +569,7 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 			}
 			proposedSolution = ConvertSTExpressionForPolicy(il, nonAcceptableNames, true, solutionTransition)
 		} else {
-			acceptableNames := problemInputs
+			acceptableNames := append(problemInputs, problemInternals...)
 			proposedSolution = ConvertSTExpressionForPolicy(il, acceptableNames, false, solutionTransition)
 			if proposedSolution == nil {
 				fmt.Printf("Well, that didn't work (1)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
@@ -580,7 +584,7 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 			}
 			proposedSolution = ConvertSTExpressionForPolicy(il, nonAcceptableNames, true, solutionTransition)
 		} else {
-			acceptableNames := problemOutputs
+			acceptableNames := append(problemOutputs, problemInternals...)
 			proposedSolution = ConvertSTExpressionForPolicy(il, acceptableNames, false, solutionTransition)
 			if proposedSolution == nil {
 				fmt.Printf("Well, that didn't work (2)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
@@ -605,39 +609,60 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 
 	//TODO: remove TIMERS from problem space if present
 
-	op := proposedSolution.HasOperator()
+	return STMakeSolutionAssignments(proposedSolution)
+
+	//return nil
+}
+
+func STMakeSolutionAssignments(soln stconverter.STExpression) []stconverter.STExpression {
+	op := soln.HasOperator()
 	//if VARIABLE ONLY, 			return VARIABLE = 1
 	if op == nil {
-		return stconverter.STExpressionOperator{
-			Operator: stconverter.FindOp(":="),
-			Arguments: []stconverter.STExpression{
-				stconverter.STExpressionValue{Value: "1"},
-				stconverter.STExpressionValue{Value: proposedSolution.HasValue()},
-			}}
+		return []stconverter.STExpression{
+			stconverter.STExpressionOperator{
+				Operator: stconverter.FindOp(":="),
+				Arguments: []stconverter.STExpression{
+					stconverter.STExpressionValue{Value: "1"},
+					stconverter.STExpressionValue{Value: soln.HasValue()},
+				},
+			},
+		}
 	}
-	args := proposedSolution.GetArguments()
+
+	if op.GetToken() == "and" {
+		solns := make([]stconverter.STExpression, 0)
+		for _, arg := range soln.GetArguments() {
+			tempSoln := STMakeSolutionAssignments(arg)
+			if arg != nil {
+				solns = append(solns, tempSoln...)
+			}
+		}
+		return solns
+	}
+
+	args := soln.GetArguments()
 
 	//if NOT(VARIABLE) ONLY, 		return VARIABLE = 1
 	if op.GetToken() == "not" && len(args) == 1 {
-		return stconverter.STExpressionOperator{
+		return []stconverter.STExpression{stconverter.STExpressionOperator{
 			Operator: stconverter.FindOp(":="),
 			Arguments: []stconverter.STExpression{
 				stconverter.STExpressionValue{Value: "0"},
 				stconverter.STExpressionValue{Value: args[0].HasValue()},
-			}}
+			}}}
 	}
 
 	//if VARIABLE == EXPRESSION, 	return VARIABLE = EXPRESSION
 	if op.GetToken() == "=" && len(args) == 2 {
-		return stconverter.STExpressionOperator{
+		return []stconverter.STExpression{stconverter.STExpressionOperator{
 			Operator:  stconverter.FindOp(":="),
 			Arguments: args,
-		}
+		}}
 	}
 
 	//if VARIABLE > EXPRESSION, 	return VARIABLE = EXPRESSION + 1
 	if op.GetToken() == ">" && len(args) == 2 {
-		return stconverter.STExpressionOperator{
+		return []stconverter.STExpression{stconverter.STExpressionOperator{
 			Operator: stconverter.FindOp(":="),
 			Arguments: []stconverter.STExpression{
 				stconverter.STExpressionOperator{
@@ -649,20 +674,20 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 				},
 				stconverter.STExpressionValue{Value: args[0].HasValue()},
 			},
-		}
+		}}
 	}
 
 	//if VARIABLE >= EXPRESSION, 	return VARIABLE = EXPRESSION
 	if op.GetToken() == ">=" && len(args) == 2 {
-		return stconverter.STExpressionOperator{
+		return []stconverter.STExpression{stconverter.STExpressionOperator{
 			Operator:  stconverter.FindOp(":="),
 			Arguments: args,
-		}
+		}}
 	}
 
 	//if VARIABLE < EXPRESSION, 	return VARIABLE = EXPRESSION - 1
 	if op.GetToken() == ">" && len(args) == 2 {
-		return stconverter.STExpressionOperator{
+		return []stconverter.STExpression{stconverter.STExpressionOperator{
 			Operator: stconverter.FindOp(":="),
 			Arguments: []stconverter.STExpression{
 				stconverter.STExpressionOperator{
@@ -674,20 +699,20 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 				},
 				stconverter.STExpressionValue{Value: args[0].HasValue()},
 			},
-		}
+		}}
 	}
 
 	//if VARIABLE <= EXPRESSION, 	return VARIABLE = EXPRESSION
 	if op.GetToken() == "<=" && len(args) == 2 {
-		return stconverter.STExpressionOperator{
+		return []stconverter.STExpression{stconverter.STExpressionOperator{
 			Operator:  stconverter.FindOp(":="),
 			Arguments: args,
-		}
+		}}
 	}
 
 	//if VARIABLE != EXPRESSION,	return VARIABLE = EXPRESSION + 1
 	if op.GetToken() == "<>" && len(args) == 2 {
-		return stconverter.STExpressionOperator{
+		return []stconverter.STExpression{stconverter.STExpressionOperator{
 			Operator: stconverter.FindOp(":="),
 			Arguments: []stconverter.STExpression{
 				stconverter.STExpressionOperator{
@@ -699,11 +724,10 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 				},
 				stconverter.STExpressionValue{Value: args[0].HasValue()},
 			},
-		}
+		}}
 	}
 
 	//If still here, we don't know what to do
-	fmt.Println("WARNING: I couldn't solve guard \"", stconverter.CCompileExpression(proposedSolution), "\"")
-
+	fmt.Println("WARNING: I couldn't solve guard \"", stconverter.CCompileExpression(soln), "\"")
 	return nil
 }
