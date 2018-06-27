@@ -165,7 +165,7 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 
 	//2. Select first solution
 	posSolTr := posSolTrs[0]
-	solution := SolveSTExpression(enf.interfaceList, inputPolicy, posSolTr.STGuard)
+	solution := SolveSTExpression(enf.interfaceList, inputPolicy, tr.STGuard, posSolTr.STGuard)
 
 	return STExpressionSolution{Expression: stconverter.CCompileExpression(solution), Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 
@@ -211,7 +211,7 @@ func ConvertPSTTransitionForInputPolicy(il InterfaceList, inputPolicy bool, outp
 		}
 	}
 
-	retSTGuard := ConvertSTExpressionForPolicy(il, acceptableNames, outpTrans.STGuard)
+	retSTGuard := ConvertSTExpressionForPolicy(il, acceptableNames, true, outpTrans.STGuard)
 
 	retTrans := outpTrans
 	retTrans.STGuard = retSTGuard
@@ -239,7 +239,7 @@ func stringSliceContains(slice []string, str string) bool {
 }
 
 //ConvertSTExpressionForPolicy will remove from a single STExpression
-//all instances of vars located in []removeVarNames
+//all instances of vars located in []varNames if acceptableNames == false
 //a == input
 //b == output
 //"a" becomes "a"
@@ -248,7 +248,7 @@ func stringSliceContains(slice []string, str string) bool {
 //"func(a, b)" becomes "func(a, true)"
 //"!b" becomes "true" (technically becomes "not(true or not true)")
 //TODO: a transition based only on time becomes nil?
-func ConvertSTExpressionForPolicy(il InterfaceList, removeVarNames []string, expr stconverter.STExpression) stconverter.STExpression {
+func ConvertSTExpressionForPolicy(il InterfaceList, varNames []string, removeVarNames bool, expr stconverter.STExpression) stconverter.STExpression {
 	//options
 	//1. It is just a value
 	//	  --if input or value, return
@@ -263,7 +263,9 @@ func ConvertSTExpressionForPolicy(il InterfaceList, removeVarNames []string, exp
 
 	op := expr.HasOperator()
 	if op == nil { //if it's just a value, return if that value
-		if stringSliceContains(removeVarNames, expr.HasValue()) {
+		if removeVarNames && stringSliceContains(varNames, expr.HasValue()) ||
+			!removeVarNames && !stringSliceContains(varNames, expr.HasValue()) {
+
 			return nil
 		}
 		// if VariablesContain(intl, expr.HasValue()) {
@@ -288,7 +290,9 @@ func ConvertSTExpressionForPolicy(il InterfaceList, removeVarNames []string, exp
 			//it is a value
 			argV := stconverter.STExpressionValue{Value: arg.HasValue()}
 			//see if it is acceptable
-			if stringSliceContains(removeVarNames, argV.HasValue()) {
+			if removeVarNames && stringSliceContains(varNames, argV.HasValue()) ||
+				!removeVarNames && !stringSliceContains(varNames, argV.HasValue()) {
+
 				acceptableArgIs = append(acceptableArgIs, false)
 				acceptableArgs = append(acceptableArgs, nil)
 			} else {
@@ -302,7 +306,7 @@ func ConvertSTExpressionForPolicy(il InterfaceList, removeVarNames []string, exp
 			continue
 		} else {
 			//it is an operator, run the operator through this function and see if it is acceptable
-			convArg := ConvertSTExpressionForPolicy(il, removeVarNames, args[i])
+			convArg := ConvertSTExpressionForPolicy(il, varNames, removeVarNames, args[i])
 			if convArg != nil {
 				acceptableArgIs = append(acceptableArgIs, true)
 				acceptableArgs = append(acceptableArgs, convArg)
@@ -503,6 +507,18 @@ func SplitExpressionsOnOr(expr stconverter.STExpression) []stconverter.STExpress
 
 }
 
+//DeepGetValues recursively gets all values from a given stconverter.STExpression
+func DeepGetValues(expr stconverter.STExpression) []string {
+	if val := expr.HasValue(); val != "" {
+		return []string{val}
+	}
+	vals := make([]string, 0)
+	for _, arg := range expr.GetArguments() {
+		vals = append(vals, DeepGetValues(arg)...)
+	}
+	return vals
+}
+
 //SolveSTExpression will solve simple STExpressions
 //The top level should be one of the following
 //if VARIABLE ONLY, 			return VARIABLE = 1
@@ -514,30 +530,92 @@ func SplitExpressionsOnOr(expr stconverter.STExpression) []stconverter.STExpress
 //if VARIABLE <= EXPRESSION, 	return VARIABLE = EXPRESSION
 //if VARIABLE != EXPRESSION,	return VARIABLE = EXPRESSION + 1
 //otherwise, return nil (can't solve)
-func SolveSTExpression(il InterfaceList, inputPolicy bool, inp stconverter.STExpression) stconverter.STExpression {
-	problem := inp
-	if !inputPolicy {
-		//project problem on outputs to solve (as we can only effect vars in input or output depending on our problem scope)
-		acceptableNames := make([]string, len(il.InputVars))
-		for i, v := range il.InputVars {
-			acceptableNames[i] = v.Name
+func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stconverter.STExpression, solutionTransition stconverter.STExpression) stconverter.STExpression {
+
+	//first we need to project the solutionTransition over the problemTransition
+
+	//lets get all mentioned values in the problemTransition
+	problemVals := DeepGetValues(problemTransition)
+
+	//now lets classify them
+	problemInputs := make([]string, 0)
+	problemOutputs := make([]string, 0)
+	problemInternals := make([]string, 0)
+
+	for _, problemVal := range problemVals {
+		if il.HasIONamed(true, problemVal) {
+			problemInputs = append(problemInputs, problemVal)
+			continue
 		}
-		problem = ConvertSTExpressionForPolicy(il, acceptableNames, inp)
+		if il.HasIONamed(false, problemVal) {
+			problemOutputs = append(problemOutputs, problemVal)
+			continue
+		}
+		problemInternals = append(problemInternals, problemVal)
 	}
+
+	//now let's do the projection
+	var proposedSolution stconverter.STExpression
+	if inputPolicy {
+		if len(problemInputs) == 0 {
+			//this is a time-based problem on the inputs, so we'll use all inputs to fix it
+			nonAcceptableNames := make([]string, len(il.OutputVars))
+			for i, v := range il.OutputVars {
+				nonAcceptableNames[i] = v.Name
+			}
+			proposedSolution = ConvertSTExpressionForPolicy(il, nonAcceptableNames, true, solutionTransition)
+		} else {
+			acceptableNames := problemInputs
+			proposedSolution = ConvertSTExpressionForPolicy(il, acceptableNames, false, solutionTransition)
+			if proposedSolution == nil {
+				fmt.Printf("Well, that didn't work (1)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
+			}
+		}
+	} else {
+		if len(problemOutputs) == 0 {
+			//this is a time-based problem on the outputs, so we'll use all outputs to fix it
+			nonAcceptableNames := make([]string, len(il.InputVars))
+			for i, v := range il.InputVars {
+				nonAcceptableNames[i] = v.Name
+			}
+			proposedSolution = ConvertSTExpressionForPolicy(il, nonAcceptableNames, true, solutionTransition)
+		} else {
+			acceptableNames := problemOutputs
+			proposedSolution = ConvertSTExpressionForPolicy(il, acceptableNames, false, solutionTransition)
+			if proposedSolution == nil {
+				fmt.Printf("Well, that didn't work (2)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
+			}
+		}
+	}
+
+	if proposedSolution == nil {
+		fmt.Printf("Well, that didn't work (3)\r\nsolutionTransition:%v\r\nproblemTransition:%v\r\n", stconverter.CCompileExpression(solutionTransition), stconverter.CCompileExpression(problemTransition))
+		return nil
+	}
+
+	// problem := solutionTransition
+	// if !inputPolicy {
+	// 	//project problem on outputs to solve (as we can only effect vars in input or output depending on our problem scope)
+	// 	acceptableNames := make([]string, len(il.InputVars))
+	// 	for i, v := range il.InputVars {
+	// 		acceptableNames[i] = v.Name
+	// 	}
+	// 	problem = ConvertSTExpressionForPolicy(il, acceptableNames, true, solutionTransition)
+	// }
 
 	//TODO: remove TIMERS from problem space if present
 
-	op := problem.HasOperator()
+	op := proposedSolution.HasOperator()
 	//if VARIABLE ONLY, 			return VARIABLE = 1
 	if op == nil {
 		return stconverter.STExpressionOperator{
 			Operator: stconverter.FindOp(":="),
 			Arguments: []stconverter.STExpression{
 				stconverter.STExpressionValue{Value: "1"},
-				stconverter.STExpressionValue{Value: problem.HasValue()},
+				stconverter.STExpressionValue{Value: proposedSolution.HasValue()},
 			}}
 	}
-	args := problem.GetArguments()
+	args := proposedSolution.GetArguments()
 
 	//if NOT(VARIABLE) ONLY, 		return VARIABLE = 1
 	if op.GetToken() == "not" && len(args) == 1 {
@@ -625,7 +703,7 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, inp stconverter.STExp
 	}
 
 	//If still here, we don't know what to do
-	fmt.Println("WARNING: I couldn't solve guard \"", stconverter.CCompileExpression(problem), "\"")
+	fmt.Println("WARNING: I couldn't solve guard \"", stconverter.CCompileExpression(proposedSolution), "\"")
 
 	return nil
 }
