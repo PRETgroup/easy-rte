@@ -6,7 +6,7 @@ interface of ab5Function {
 
 policy AB5 of ab5Function {
 	internals {
-		dtimer v;
+		dtimer_t v;
 	}
 
 	states {

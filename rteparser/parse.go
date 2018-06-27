@@ -177,8 +177,8 @@ func isValidType(s string) bool {
 		s == "int64_t" ||
 		s == "float" ||
 		s == "double" ||
-		s == "dtimer" ||
-		s == "rtimer" ||
+		s == "dtimer_t" ||
+		s == "rtimer_t" ||
 		s == "any" {
 		return true
 	}

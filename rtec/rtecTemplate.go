@@ -83,8 +83,8 @@ const rtecTemplate = `{{define "_policyIn"}}{{$block := .}}
 #include <stdint.h>
 #include <stdbool.h>
 
-//the DTIMER type
-typedef uint64_t DTIMER;
+//the dtimer_t type
+typedef uint64_t dtimer_t;
 
 //For each policy, we need an enum type for the state machine
 {{range $polI, $pol := $block.Policies}}

@@ -30,7 +30,7 @@ type PEnforcerPolicy struct {
 func (pol PEnforcerPolicy) GetDTimers() []Variable {
 	dTimers := make([]Variable, 0)
 	for _, v := range pol.InternalVars {
-		if strings.ToLower(v.Type) == "dtimer" {
+		if strings.ToLower(v.Type) == "dtimer_t" {
 			dTimers = append(dTimers, v)
 		}
 	}
@@ -198,7 +198,21 @@ func DeriveInputEnforcerPolicy(il InterfaceList, outPol PEnforcerPolicy) PEnforc
 
 //ConvertPSTTransitionForInputPolicy will convert a single PSTTransition from an Output Policy to its Input Policy Deriviation
 func ConvertPSTTransitionForInputPolicy(il InterfaceList, inputPolicy bool, outpTrans PSTTransition) PSTTransition {
-	retSTGuard := ConvertSTExpressionForPolicy(il, inputPolicy, outpTrans.STGuard)
+	var acceptableNames []string
+	if inputPolicy {
+		acceptableNames = make([]string, len(il.OutputVars))
+		for i, v := range il.OutputVars {
+			acceptableNames[i] = v.Name
+		}
+	} else {
+		acceptableNames = make([]string, len(il.InputVars))
+		for i, v := range il.InputVars {
+			acceptableNames[i] = v.Name
+		}
+	}
+
+	retSTGuard := ConvertSTExpressionForPolicy(il, acceptableNames, outpTrans.STGuard)
+
 	retTrans := outpTrans
 	retTrans.STGuard = retSTGuard
 	retTrans.Condition = stconverter.CCompileExpression(retSTGuard)
@@ -215,7 +229,17 @@ func VariablesContain(vars []Variable, name string) bool {
 	return false
 }
 
-//ConvertSTExpressionForPolicy will convert a single STExpression from an Output Policy transition guard to its Input Policy transition guard's Deriviation
+func stringSliceContains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
+
+//ConvertSTExpressionForPolicy will remove from a single STExpression
+//all instances of vars located in []removeVarNames
 //a == input
 //b == output
 //"a" becomes "a"
@@ -224,7 +248,7 @@ func VariablesContain(vars []Variable, name string) bool {
 //"func(a, b)" becomes "func(a, true)"
 //"!b" becomes "true" (technically becomes "not(true or not true)")
 //TODO: a transition based only on time becomes nil?
-func ConvertSTExpressionForPolicy(il InterfaceList, inputPolicy bool, expr stconverter.STExpression) stconverter.STExpression {
+func ConvertSTExpressionForPolicy(il InterfaceList, removeVarNames []string, expr stconverter.STExpression) stconverter.STExpression {
 	//options
 	//1. It is just a value
 	//	  --if input or value, return
@@ -239,7 +263,7 @@ func ConvertSTExpressionForPolicy(il InterfaceList, inputPolicy bool, expr stcon
 
 	op := expr.HasOperator()
 	if op == nil { //if it's just a value, return if that value
-		if il.HasIONamed(!inputPolicy, expr.HasValue()) {
+		if stringSliceContains(removeVarNames, expr.HasValue()) {
 			return nil
 		}
 		// if VariablesContain(intl, expr.HasValue()) {
@@ -264,7 +288,7 @@ func ConvertSTExpressionForPolicy(il InterfaceList, inputPolicy bool, expr stcon
 			//it is a value
 			argV := stconverter.STExpressionValue{Value: arg.HasValue()}
 			//see if it is acceptable
-			if il.HasIONamed(!inputPolicy, argV.HasValue()) {
+			if stringSliceContains(removeVarNames, argV.HasValue()) {
 				acceptableArgIs = append(acceptableArgIs, false)
 				acceptableArgs = append(acceptableArgs, nil)
 			} else {
@@ -278,7 +302,7 @@ func ConvertSTExpressionForPolicy(il InterfaceList, inputPolicy bool, expr stcon
 			continue
 		} else {
 			//it is an operator, run the operator through this function and see if it is acceptable
-			convArg := ConvertSTExpressionForPolicy(il, inputPolicy, args[i])
+			convArg := ConvertSTExpressionForPolicy(il, removeVarNames, args[i])
 			if convArg != nil {
 				acceptableArgIs = append(acceptableArgIs, true)
 				acceptableArgs = append(acceptableArgs, convArg)
@@ -494,7 +518,11 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, inp stconverter.STExp
 	problem := inp
 	if !inputPolicy {
 		//project problem on outputs to solve (as we can only effect vars in input or output depending on our problem scope)
-		problem = ConvertSTExpressionForPolicy(il, false, inp)
+		acceptableNames := make([]string, len(il.InputVars))
+		for i, v := range il.InputVars {
+			acceptableNames[i] = v.Name
+		}
+		problem = ConvertSTExpressionForPolicy(il, acceptableNames, inp)
 	}
 
 	//TODO: remove TIMERS from problem space if present
