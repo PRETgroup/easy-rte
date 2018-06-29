@@ -567,16 +567,9 @@ func DeepGetValues(expr stconverter.STExpression) []string {
 }
 
 //SolveSTExpression will solve simple STExpressions
-//The top level should be one of the following
-//if VARIABLE ONLY, 			return VARIABLE = 1
-//if NOT(VARIABLE) ONLY, 		return VARIABLE = 0
-//if VARIABLE == EXPRESSION, 	return VARIABLE = EXPRESSION
-//if VARIABLE > EXPRESSION, 	return VARIABLE = EXPRESSION + 1
-//if VARIABLE >= EXPRESSION, 	return VARIABLE = EXPRESSION
-//if VARIABLE < EXPRESSION, 	return VARIABLE = EXPRESSION - 1
-//if VARIABLE <= EXPRESSION, 	return VARIABLE = EXPRESSION
-//if VARIABLE != EXPRESSION,	return VARIABLE = EXPRESSION + 1
-//otherwise, return nil (can't solve)
+//It will project the solutionTransition onto the problemTransition
+//Then, it will use the resulting transition with STMakeSolutionAssignments to
+//convert the comparison into an assignment
 func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stconverter.STExpression, solutionTransition stconverter.STExpression) []stconverter.STExpression {
 
 	//first we need to project the solutionTransition over the problemTransition
@@ -657,6 +650,17 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 	//return nil
 }
 
+//STMakeSolutionAssignments will convert a comparison stExpression into an assignment that meets the comparison
+//The top level should be one of the following
+//if VARIABLE ONLY, 			return VARIABLE = 1
+//if NOT(VARIABLE) ONLY, 		return VARIABLE = 0
+//if VARIABLE == EXPRESSION, 	return VARIABLE = EXPRESSION
+//if VARIABLE > EXPRESSION, 	return VARIABLE = EXPRESSION + 1
+//if VARIABLE >= EXPRESSION, 	return VARIABLE = EXPRESSION
+//if VARIABLE < EXPRESSION, 	return VARIABLE = EXPRESSION - 1
+//if VARIABLE <= EXPRESSION, 	return VARIABLE = EXPRESSION
+//if VARIABLE != EXPRESSION,	return VARIABLE = EXPRESSION + 1
+//otherwise, return nil (can't solve)
 func STMakeSolutionAssignments(soln stconverter.STExpression) []stconverter.STExpression {
 	op := soln.HasOperator()
 	//if VARIABLE ONLY, 			return VARIABLE = 1
