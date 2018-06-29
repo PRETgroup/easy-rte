@@ -101,9 +101,23 @@ func MakePEnforcer(il InterfaceList, p Policy) (*PEnforcer, error) {
 	enf.OutputPolicy.RemoveDuplicateTransitions()
 
 	enf.InputPolicy = DeriveInputEnforcerPolicy(il, enf.OutputPolicy)
+	enf.InputPolicy.RemoveNilTransitions()
 	enf.InputPolicy.RemoveDuplicateTransitions()
+	enf.InputPolicy.RemoveAlwaysTrueTransitions()
 
 	return enf, nil
+}
+
+//RemoveNilTransitions will do a search through a policies transitions and remove any that have nil guards
+func (pol *PEnforcerPolicy) RemoveNilTransitions() {
+	for i := 0; i < len(pol.Transitions); i++ {
+		for j := i + 1; j < len(pol.Transitions); j++ {
+			if pol.Transitions[j].STGuard == nil {
+				pol.Transitions = append(pol.Transitions[:j], pol.Transitions[j+1:]...)
+				j--
+			}
+		}
+	}
 }
 
 //RemoveDuplicateTransitions will do a search through a policies transitions and remove any that are simple duplicates
@@ -112,6 +126,18 @@ func (pol *PEnforcerPolicy) RemoveDuplicateTransitions() {
 	for i := 0; i < len(pol.Transitions); i++ {
 		for j := i + 1; j < len(pol.Transitions); j++ {
 			if reflect.DeepEqual(pol.Transitions[i], pol.Transitions[j]) {
+				pol.Transitions = append(pol.Transitions[:j], pol.Transitions[j+1:]...)
+				j--
+			}
+		}
+	}
+}
+
+//RemoveAlwaysTrueTransitions will do a search through a policies transitions and remove any that are just "true"
+func (pol *PEnforcerPolicy) RemoveAlwaysTrueTransitions() {
+	for i := 0; i < len(pol.Transitions); i++ {
+		for j := i + 1; j < len(pol.Transitions); j++ {
+			if val := pol.Transitions[j].STGuard.HasValue(); val == "true" || val == "1" {
 				pol.Transitions = append(pol.Transitions[:j], pol.Transitions[j+1:]...)
 				j--
 			}
@@ -202,24 +228,26 @@ func DeriveInputEnforcerPolicy(il InterfaceList, outPol PEnforcerPolicy) PEnforc
 
 //ConvertPSTTransitionForInputPolicy will convert a single PSTTransition from an Output Policy to its Input Policy Deriviation
 func ConvertPSTTransitionForInputPolicy(il InterfaceList, inputPolicy bool, outpTrans PSTTransition) PSTTransition {
-	var acceptableNames []string
+	var nonAcceptableNames []string
 	if inputPolicy {
-		acceptableNames = make([]string, len(il.OutputVars))
+		nonAcceptableNames = make([]string, len(il.OutputVars))
 		for i, v := range il.OutputVars {
-			acceptableNames[i] = v.Name
+			nonAcceptableNames[i] = v.Name
 		}
 	} else {
-		acceptableNames = make([]string, len(il.InputVars))
+		nonAcceptableNames = make([]string, len(il.InputVars))
 		for i, v := range il.InputVars {
-			acceptableNames[i] = v.Name
+			nonAcceptableNames[i] = v.Name
 		}
 	}
+	fmt.Printf("calling with %s\r\n", outpTrans.Condition)
 
-	retSTGuard := ConvertSTExpressionForPolicy(il, acceptableNames, true, outpTrans.STGuard)
+	retSTGuard := ConvertSTExpressionForPolicy(il, nonAcceptableNames, true, outpTrans.STGuard)
 
 	retTrans := outpTrans
 	retTrans.STGuard = retSTGuard
 	retTrans.Condition = stconverter.CCompileExpression(retSTGuard)
+	fmt.Printf("returning %s\r\n", retTrans.Condition)
 	return retTrans
 }
 
@@ -326,7 +354,14 @@ func ConvertSTExpressionForPolicy(il InterfaceList, varNames []string, removeVar
 
 	if numAcceptable < len(args) {
 		//if less than the total args are acceptable, and only one argument is acceptable, then it is easy,
-		//we can just return that one argument as an independent value
+		//we can just return that one argument as an independent value, as long as the operator was a combinator like "and" or "or"
+
+		if !stconverter.OpTokenIsCombinator(op.GetToken()) {
+			//operator was not a comparison, e.g. "x >= 5" is not an "and" or an "or"
+			//so no point returning "5"
+			return nil
+		}
+
 		//e.g. "(a and b)" becomes "a"
 		if numAcceptable == 1 {
 			for i := 0; i < len(acceptableArgIs); i++ {
@@ -345,12 +380,20 @@ func ConvertSTExpressionForPolicy(il InterfaceList, varNames []string, removeVar
 	//STExpressionOperator, which has the same operator as we're currently examining
 	//then, all unacceptable (i.e. nil) arguments should be replaced with simple value "true"
 	actualArgs := make([]stconverter.STExpression, len(acceptableArgs))
+	validArgs := 0
+	lastValidArg := 0
 	for i := 0; i < len(actualArgs); i++ {
 		if acceptableArgs[i] != nil {
 			actualArgs[i] = acceptableArgs[i]
+			validArgs++
+			lastValidArg = i
 		} else {
-			actualArgs[i] = stconverter.STExpressionValue{Value: "true"}
+			actualArgs[i] = nil //stconverter.STExpressionValue{Value: "true"}
 		}
+	}
+
+	if validArgs == 1 {
+		return actualArgs[lastValidArg]
 	}
 
 	ret := stconverter.STExpressionOperator{
@@ -617,6 +660,7 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 func STMakeSolutionAssignments(soln stconverter.STExpression) []stconverter.STExpression {
 	op := soln.HasOperator()
 	//if VARIABLE ONLY, 			return VARIABLE = 1
+	fmt.Printf("Solving %s\r\n", stconverter.CCompileExpression(soln))
 	if op == nil {
 		return []stconverter.STExpression{
 			stconverter.STExpressionOperator{
