@@ -42,6 +42,7 @@ policy stayOnTable of Robotable {
 
 			-> s0 on (
 				(reqLocX >= minX) and (reqLocX <= maxX) and (reqLocY >= minY) and (reqLocY <= maxY) and 
+				(curLocX >= minX) and (curLocX <= maxX) and (curLocY >= minY) and (curLocY <= maxY) and
 				((curLocX + driveX) >= minX) and ((curLocX + driveX) <= maxX) and ((curLocY + driveY) >= minY) and ((curLocY + driveY) <= maxY)) and
 				(driveX >= -1) and (driveX >= 1) and (driveY <= -1) and (driveY >= 1)
 			);
