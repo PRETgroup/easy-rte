@@ -101,9 +101,9 @@ func MakePEnforcer(il InterfaceList, p Policy) (*PEnforcer, error) {
 	enf.OutputPolicy.RemoveDuplicateTransitions()
 
 	enf.InputPolicy = DeriveInputEnforcerPolicy(il, enf.OutputPolicy)
-	enf.InputPolicy.RemoveNilTransitions()
+	//enf.InputPolicy.RemoveNilTransitions()
 	enf.InputPolicy.RemoveDuplicateTransitions()
-	enf.InputPolicy.RemoveAlwaysTrueTransitions()
+	//enf.InputPolicy.RemoveAlwaysTrueTransitions()
 
 	return enf, nil
 }
@@ -407,11 +407,11 @@ func ConvertSTExpressionForPolicy(il InterfaceList, varNames []string, removeVar
 			validArgs++
 			lastValidArg = i
 		} else {
-			actualArgs[i] = nil //stconverter.STExpressionValue{Value: "true"}
+			actualArgs[i] = stconverter.STExpressionValue{Value: "true"}
 		}
 	}
 
-	if validArgs == 1 {
+	if validArgs == 1 && numAcceptable > 1 {
 		return actualArgs[lastValidArg]
 	}
 
