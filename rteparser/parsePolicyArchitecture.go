@@ -187,7 +187,7 @@ func (t *pParse) parsePState(fbIndex int) *ParseError {
 				for {
 					//pColon means that there are EXPRESSIONS that follow, but we're done here
 					//pSemicolon means that there is NOTHING that follows, and we're done here
-					if t.peek() == pColon || t.peek() == pSemicolon {
+					if t.peek() == pColon || t.peek() == pSemicolon || t.peek() == pRecover {
 						break
 					}
 
@@ -213,26 +213,44 @@ func (t *pParse) parsePState(fbIndex int) *ParseError {
 			}
 
 			var expressions []rtedef.PExpression
+			var recoveries []rtedef.PExpression
 			var expressionComponents []string
 			var expressionVar string
-			//if we broke on a colon, then we now have EXPRESSIONS to parse
-			if t.peek() == pColon {
-				t.pop() //clear the pColon
+
+			expressionsAreRecovery := false
+
+			//if we broke on a colon or pRecover, then we now have EXPRESSIONS to parse
+			if t.peek() == pColon || t.peek() == pRecover {
+				if t.peek() == pRecover {
+					expressionsAreRecovery = true
+				}
+				t.pop() //clear the whatever
 				//the format is
 				// VARIABLE := EXPRESSION [, VARIABLE := EXPRESSION]
 				expressionVar = ""
 				for {
-					if t.peek() == pSemicolon || t.peek() == pComma {
+					if t.peek() == pSemicolon || t.peek() == pComma || (expressionsAreRecovery == false && t.peek() == pRecover) {
 						//finish the previous expression (if possible, indicated by expressionVar) and start the next one (if available, indicated by a comma)
 						if expressionVar != "" {
-							expressions = append(expressions, rtedef.PExpression{
-								VarName: expressionVar,
-								Value:   strings.Join(expressionComponents, " "),
-							})
+							if expressionsAreRecovery {
+								recoveries = append(recoveries, rtedef.PExpression{
+									VarName: expressionVar,
+									Value:   strings.Join(expressionComponents, " "),
+								})
+							} else {
+								expressions = append(expressions, rtedef.PExpression{
+									VarName: expressionVar,
+									Value:   strings.Join(expressionComponents, " "),
+								})
+							}
 							expressionVar = ""
 						}
 						if t.peek() == pComma {
 							t.pop()
+							continue
+						}
+						if expressionsAreRecovery == false && t.peek() == pRecover {
+							//on next iteration, expressionsAreRecovery will be set to true
 							continue
 						}
 						break
@@ -261,7 +279,7 @@ func (t *pParse) parsePState(fbIndex int) *ParseError {
 			}
 			t.pop() //pop the pSemicolon
 			//save the transition
-			fb.Policies[len(fb.Policies)-1].AddTransition(name, destState, strings.Join(condComponents, " "), expressions)
+			fb.Policies[len(fb.Policies)-1].AddTransition(name, destState, strings.Join(condComponents, " "), expressions, recoveries)
 		}
 	}
 

@@ -25,10 +25,19 @@ policy stayOnTable of Robotable {
 	states {
 
 		s0 {
+			//INPUT: ensure requested location is on the table
 			-> violation on ((reqLocX < minX) or (reqLocX > maxX) or (reqLocY < minY) or (reqLocY > maxY));
-
-			-> violation on (((curLocX + driveX) < minX) or ((curLocX + driveX) > maxX) or ((curLocY + driveY) < minY) or ((curLocY + driveY) > maxY));
 			
+			//INPUT: ensure sensed location is on the table
+			-> violation on ((curLocX < minX) or (curLocX > maxX) or (curLocY < minY) or (curLocY > maxY));
+
+			//OUTPUT: ensure that the current sense location augmented with the drive command does not push us off the table
+			-> violation on ((curLocX + driveX) < minX) recover driveX := 0;
+			-> violation on ((curLocX + driveX) > maxX) recover driveX := 0;
+			-> violation on ((curLocY + driveY) < minY) recover driveY := 0;
+			-> violation on ((curLocY + driveY) > maxY) recover driveY := 0;
+			
+			//OUTPUT: ensure that the drive command does not exceed a safe value
 			-> violation on ((driveX < -1) or (driveX > 1) or (driveY < -1) or (driveY > 1));
 
 			-> s0 on (

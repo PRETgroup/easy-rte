@@ -36,6 +36,8 @@ const (
 	pTrans = "->"
 	pOn    = "on"
 
+	pRecover = "recover"
+
 	pInternal   = "internal"
 	pInternals  = "internals"
 	pState      = "state"

@@ -191,7 +191,7 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 
 	//2. Select first solution
 	posSolTr := posSolTrs[0]
-	solutions := SolveSTExpression(enf.interfaceList, inputPolicy, tr.STGuard, posSolTr.STGuard)
+	solutions := SolveSTExpression(enf.interfaceList, inputPolicy, tr, posSolTr.STGuard)
 	solutionExpressions := make([]string, len(solutions))
 	for i, soln := range solutions {
 		solutionExpressions[i] = stconverter.CCompileExpression(soln)
@@ -570,12 +570,28 @@ func DeepGetValues(expr stconverter.STExpression) []string {
 //It will project the solutionTransition onto the problemTransition
 //Then, it will use the resulting transition with STMakeSolutionAssignments to
 //convert the comparison into an assignment
-func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stconverter.STExpression, solutionTransition stconverter.STExpression) []stconverter.STExpression {
+func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition PSTTransition, solutionTransition stconverter.STExpression) []stconverter.STExpression {
+
+	//check if a recovery was provided
+	if len(problemTransition.Recover) > 0 {
+		solution := make([]stconverter.STExpression, 0)
+		for _, recov := range problemTransition.Recover {
+			solution = append(solution, stconverter.STExpressionOperator{
+				Operator: stconverter.FindOp(":="),
+				Arguments: []stconverter.STExpression{
+					stconverter.STExpressionValue{Value: recov.Value},
+					stconverter.STExpressionValue{Value: recov.VarName},
+				},
+			})
+		}
+		return solution
+	}
 
 	//first we need to project the solutionTransition over the problemTransition
 
 	//lets get all mentioned values in the problemTransition
-	problemVals := DeepGetValues(problemTransition)
+	problemTransitionExpr := problemTransition.STGuard
+	problemVals := DeepGetValues(problemTransitionExpr)
 
 	//now lets classify them
 	problemInputs := make([]string, 0)
@@ -608,7 +624,8 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 			acceptableNames := append(problemInputs, problemInternals...)
 			proposedSolution = ConvertSTExpressionForPolicy(il, acceptableNames, false, solutionTransition)
 			if proposedSolution == nil {
-				fmt.Printf("Well, that didn't work (1)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
+				//fmt.Printf("Well, that didn't work (1)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
+				return nil
 			}
 		}
 	} else {
@@ -623,13 +640,14 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition stc
 			acceptableNames := append(problemOutputs, problemInternals...)
 			proposedSolution = ConvertSTExpressionForPolicy(il, acceptableNames, false, solutionTransition)
 			if proposedSolution == nil {
-				fmt.Printf("Well, that didn't work (2)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
+				//fmt.Printf("Well, that didn't work (2)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
+				return nil
 			}
 		}
 	}
 
 	if proposedSolution == nil {
-		fmt.Printf("Well, that didn't work (3)\r\nsolutionTransition:%v\r\nproblemTransition:%v\r\n", stconverter.CCompileExpression(solutionTransition), stconverter.CCompileExpression(problemTransition))
+		//fmt.Printf("Well, that didn't work (3)\r\nsolutionTransition:%v\r\nproblemTransition:%v\r\n", stconverter.CCompileExpression(solutionTransition), stconverter.CCompileExpression(problemTransition))
 		return nil
 	}
 
