@@ -157,6 +157,25 @@ type STExpressionSolution struct {
 //2. Select first solution
 func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy bool) STExpressionSolution {
 
+	//check if a recovery was provided
+	if len(tr.Recover) > 0 {
+		solution := make([]stconverter.STExpression, 0)
+		for _, recov := range tr.Recover {
+			solution = append(solution, stconverter.STExpressionOperator{
+				Operator: stconverter.FindOp(":="),
+				Arguments: []stconverter.STExpression{
+					stconverter.STExpressionValue{Value: recov.Value},
+					stconverter.STExpressionValue{Value: recov.VarName},
+				},
+			})
+		}
+		solutionExpressions := make([]string, len(solution))
+		for i, soln := range solution {
+			solutionExpressions[i] = stconverter.CCompileExpression(soln)
+		}
+		return STExpressionSolution{Expressions: solutionExpressions, Comment: fmt.Sprintf("Recovery instructions manually provided.")}
+	}
+
 	posSolTrs := make([]PSTTransition, 0) //possible Solution Transitions
 	var pol PEnforcerPolicy
 	if inputPolicy {
@@ -571,21 +590,6 @@ func DeepGetValues(expr stconverter.STExpression) []string {
 //Then, it will use the resulting transition with STMakeSolutionAssignments to
 //convert the comparison into an assignment
 func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition PSTTransition, solutionTransition stconverter.STExpression) []stconverter.STExpression {
-
-	//check if a recovery was provided
-	if len(problemTransition.Recover) > 0 {
-		solution := make([]stconverter.STExpression, 0)
-		for _, recov := range problemTransition.Recover {
-			solution = append(solution, stconverter.STExpressionOperator{
-				Operator: stconverter.FindOp(":="),
-				Arguments: []stconverter.STExpression{
-					stconverter.STExpressionValue{Value: recov.Value},
-					stconverter.STExpressionValue{Value: recov.VarName},
-				},
-			})
-		}
-		return solution
-	}
 
 	//first we need to project the solutionTransition over the problemTransition
 
