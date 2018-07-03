@@ -122,11 +122,11 @@ void {{$block.Name}}_init_all_vars(enforcervars_{{$block.Name}}_t* me, inputs_{{
 
 //This function is provided in "F_{{$block.Name}}.c"
 //It will run the synthesised enforcer and call the controller function
-void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t inputs, outputs_{{$block.Name}}_t* outputs);
+void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs);
 
 //This function is provided from the user
 //It is the controller function
-extern void {{$block.Name}}_run(inputs_{{$block.Name}}_t inputs, outputs_{{$block.Name}}_t* outputs);
+extern void {{$block.Name}}_run(inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs);
 {{end}}
 
 {{define "functionC"}}{{$block := index .Functions .FunctionIndex}}{{$blocks := .Functions}}
@@ -154,7 +154,7 @@ void {{$block.Name}}_init_all_vars(enforcervars_{{$block.Name}}_t* me, inputs_{{
 	{{end}}{{end}}
 }
 
-void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t inputs, outputs_{{$block.Name}}_t* outputs) {
+void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs) {
 	{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
 
 	{{$block.Name}}_run(inputs, outputs);

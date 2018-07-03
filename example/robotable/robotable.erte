@@ -20,6 +20,9 @@ policy stayOnTable of Robotable {
 		int16_t maxX := 10;
 		int16_t minY := -10;
 		int16_t maxY := 10;
+
+		int16_t maxSpeed := 1;
+		int16_t minSpeed := -1;
 	}
 
 	states {
@@ -31,20 +34,20 @@ policy stayOnTable of Robotable {
 			//INPUT: ensure sensed location is on the table
 			-> violation on ((curLocX < minX) or (curLocX > maxX) or (curLocY < minY) or (curLocY > maxY));
 
+			//OUTPUT: ensure that the drive command does not exceed a safe value
+			-> violation on ((driveX < minSpeed) or (driveX > maxSpeed) or (driveY < minSpeed) or (driveY > maxSpeed));
+
 			//OUTPUT: ensure that the current sense location augmented with the drive command does not push us off the table
 			-> violation on ((curLocX + driveX) < minX) recover driveX := 0;
 			-> violation on ((curLocX + driveX) > maxX) recover driveX := 0;
 			-> violation on ((curLocY + driveY) < minY) recover driveY := 0;
 			-> violation on ((curLocY + driveY) > maxY) recover driveY := 0;
 			
-			//OUTPUT: ensure that the drive command does not exceed a safe value
-			-> violation on ((driveX < -1) or (driveX > 1) or (driveY < -1) or (driveY > 1));
-
 			-> s0 on (
 				(reqLocX >= minX) and (reqLocX <= maxX) and (reqLocY >= minY) and (reqLocY <= maxY) and 
 				(curLocX >= minX) and (curLocX <= maxX) and (curLocY >= minY) and (curLocY <= maxY) and
 				((curLocX + driveX) >= minX) and ((curLocX + driveX) <= maxX) and ((curLocY + driveY) >= minY) and ((curLocY + driveY) <= maxY)) and
-				(driveX >= -1) and (driveX >= 1) and (driveY <= -1) and (driveY >= 1)
+				(driveX >= minSpeed) and (driveX <= maxSpeed) and (driveY >= minSpeed) and (driveY <= maxSpeed)
 			);
 		}
 	}

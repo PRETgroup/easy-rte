@@ -11,7 +11,16 @@ _easy-rte_ was ported from [goFB](https://github.com/PRETgroup/goFB), which impl
 
 TODO
 
-## Example of Use
+## Build instructions
+
+Download and install the latest version of [Go](https://golang.org/doc/install).
+
+Then, download this repository, and run `make`, which will generate the tools. 
+
+* The ab5 example can be generated using `make example_ab5`.
+* The robotable example can be generated using `make example_robotable`.
+
+## Example of Use (AB5)
 
 Imagine a function which inputs boolean `A` and outputs boolean `B`. 
 In _easy-rte_, we present this function with the following _erte_ syntax:
@@ -95,8 +104,93 @@ Now, we can provide a `main.c` file which has our controller function in it, and
 
 This entire example is provided in the `/example/ab5` folder of this repository, including an example top level file, and can be built from the root directory using `make example_ab5`.
 
-## Build instructions
+## Example of Use (robotable)
 
-Download and install the latest version of [Go](https://golang.org/doc/install).
+Consider a 2-d flat surface (a table) with -10 to +10 in each dimension.
 
-Then, download this repository, and run `make`, which will generate the tools. The example can be generated using `make example`.
+We place an omnidirectional robot into this table, and tell it to go to a set position.
+
+There is thus a current position `(x,y)` and a desired position `(x,y)`. The robot can output a drive command which is of the form `(x,y)`.
+
+The robot's drive motors can only handle integer commands in `{-1, 0, 1}`. If the robot tries to provide larger commands, the motors will burn out.
+
+The robot should never be instructed to drive off the table, nor informed it is currently not on the table.
+
+We can represent the safety policies for this robot with the following `erte` specification:
+
+```
+function Robotable;
+interface of Robotable {
+	//in here means that they're going from PLANT to CONTROLLER
+	//The inputs to the controller is the requested X, Y location, as well as the sensed X, Y location
+	in int16_t reqLocX;  
+	in int16_t reqLocY;	
+	in int16_t curLocX := 0; //0, 0 is the middle of the table
+	in int16_t curLocY := 0;
+
+	//out here means that they're going from CONTROLLER to PLANT
+	//The outputs from the controller are the direction controllers for X and Y.
+	//These are limited to {-1, 0, 1}
+	out int16_t driveX := 0;
+	out int16_t driveY := 0;
+}
+
+policy stayOnTable of Robotable {
+	internals {
+		int16_t minX := -10;
+		int16_t maxX := 10;
+		int16_t minY := -10;
+		int16_t maxY := 10;
+
+		int16_t maxSpeed := 1;
+		int16_t minSpeed := -1;
+	}
+
+	states {
+
+		s0 {
+			//INPUT: ensure requested location is on the table
+			-> violation on ((reqLocX < minX) or (reqLocX > maxX) or (reqLocY < minY) or (reqLocY > maxY));
+			
+			//INPUT: ensure sensed location is on the table
+			-> violation on ((curLocX < minX) or (curLocX > maxX) or (curLocY < minY) or (curLocY > maxY));
+
+			//OUTPUT: ensure that the drive command does not exceed a safe value
+			-> violation on ((driveX < minSpeed) or (driveX > maxSpeed) or (driveY < minSpeed) or (driveY > maxSpeed));
+
+			//OUTPUT: ensure that the current sense location augmented with the drive command does not push us off the table
+			-> violation on ((curLocX + driveX) < minX) recover driveX := 0;
+			-> violation on ((curLocX + driveX) > maxX) recover driveX := 0;
+			-> violation on ((curLocY + driveY) < minY) recover driveY := 0;
+			-> violation on ((curLocY + driveY) > maxY) recover driveY := 0;
+			
+			//SAFE: everything is ok.
+			-> s0 on (
+				(reqLocX >= minX) and (reqLocX <= maxX) and (reqLocY >= minY) and (reqLocY <= maxY) and 
+				(curLocX >= minX) and (curLocX <= maxX) and (curLocY >= minY) and (curLocY <= maxY) and
+				((curLocX + driveX) >= minX) and ((curLocX + driveX) <= maxX) and ((curLocY + driveY) >= minY) and ((curLocY + driveY) <= maxY)) and
+				(driveX >= minSpeed) and (driveX <= maxSpeed) and (driveY >= minSpeed) and (driveY <= maxSpeed)
+			);
+		}
+	}
+}
+```
+
+You will notice in this example, unlike _ab5_, that we have used the `recover` keyword in the policy. This allows us to manually specify the recovery instruction, rather than having the tool try and autogenerate it (the tool is not perfect!).
+
+When compiling this policy, data like the following is presented to the console:
+```
+...
+Automatically deriving a solution for violation transition
+        s0 -> violation on (driveY < minSpeed)
+        (If this is undesirable behaviour, use a 'recover' keyword in the erte file to manually specify solution)
+        NOTE: (Guess) Solution found, and edits required! (I have selected a safe transition, and edited the I/O so that it can be taken)
+        Selected transition: "s0 -> s0 on reqLocX >= minX && reqLocX <= maxX && reqLocY >= minY && reqLocY <= maxY && curLocX >= minX && curLocX <= maxX && curLocY >= minY && curLocY <= maxY && curLocX + driveX >= minX && curLocX + driveX <= maxX && curLocY + driveY >= minY && curLocY + driveY <= maxY && driveX >= minSpeed && driveX <= maxSpeed && driveY >= minSpeed && driveY <= maxSpeed"
+        NOTE: I will perform the following edits:
+                driveY = minSpeed;
+...
+```
+
+We can see then that the autogeneration of solutions is correct here, as it has decided that if `driveY < minSpeed` then the correct rectifying behaviour is to make `driveY = minSpeed` (which is correct).
+
+Running this example will show that the robot eventually drives its way to the desired location eventually, despite the controller presenting unsafe outputs (drive values too large) and the desired location being set off the table.

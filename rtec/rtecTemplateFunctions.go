@@ -52,7 +52,7 @@ func getCECCTransitionCondition(function rtedef.EnforcedFunction, trans string) 
 		if function.InputVars != nil {
 			for _, Var := range function.InputVars {
 				if Var.Name == in {
-					return "inputs." + in
+					return "inputs->" + in
 				}
 			}
 		}

@@ -661,7 +661,7 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition PST
 			acceptableNames := append(problemOutputs, problemInternals...)
 			proposedSolution = ConvertSTExpressionForPolicy(il, acceptableNames, false, solutionTransition)
 			if proposedSolution == nil {
-				//fmt.Printf("Well, that didn't work (2)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransition))
+				//fmt.Printf("Well, that didn't work (2)\r\nacceptableNames:%v\r\nproblemTransition:%v\r\nsolutionTransition:%v\r\n", acceptableNames, stconverter.CCompileExpression(problemTransitionExpr), stconverter.CCompileExpression(solutionTransition))
 				return nil
 			}
 		}
