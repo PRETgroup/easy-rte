@@ -86,25 +86,33 @@ func (t *pParse) addFunctionIo(isInput bool, fbIndex int) *ParseError {
 	if t.peek() == pInitEq {
 		t.pop() //get rid of pInitial
 
-		s := t.pop()           //this might be an openbracket
-		if s == pOpenBracket { //for arrays
-			initialValue += s //we need to keep the brackets in
-			for {
-				s := t.pop()
-				if s == "" {
-					return t.error(ErrUnexpectedEOF)
-				}
-				if s == pSemicolon {
-					return t.errorUnexpectedWithExpected(s, pOpenBracket)
-				}
-				if s == pCloseBracket {
-					initialValue += s //we need to keep the brackets in
-					break
-				}
-				initialValue += s
+		bracketOpen := 0
+		for {
+			s := t.peek()
+			if s == "" {
+				return t.error(ErrUnexpectedEOF)
 			}
-		} else { //wasn't an open bracket, must just be value
-			initialValue = s
+			//deal with brackets, if we have an open bracket we must have a close bracket, etc
+			if s == pOpenBracket && bracketOpen == 0 {
+				bracketOpen = 1
+			}
+			if s == pOpenBracket && bracketOpen != 0 {
+				return t.errorUnexpectedWithExpected(s, "[Value]")
+			}
+			if s == pCloseBracket && bracketOpen == 1 {
+				bracketOpen = 2
+			}
+			if s == pCloseBracket && bracketOpen != 1 {
+				return t.errorUnexpectedWithExpected(s, pSemicolon)
+			}
+			if s == pSemicolon && bracketOpen == 1 { //can't return if brackets are open
+				return t.errorUnexpectedWithExpected(s, pCloseBracket)
+			}
+			if s == pSemicolon {
+				break
+			}
+			initialValue += s
+			t.pop() //pop whatever we were just peeking at
 		}
 	}
 

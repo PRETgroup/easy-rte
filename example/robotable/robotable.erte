@@ -16,9 +16,9 @@ interface of Robotable {
 
 policy stayOnTable of Robotable {
 	internals {
-		int16_t minX := 10;
+		int16_t minX := -10;
 		int16_t maxX := 10;
-		int16_t minY := 10;
+		int16_t minY := -10;
 		int16_t maxY := 10;
 	}
 
