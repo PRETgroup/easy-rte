@@ -101,9 +101,9 @@ func MakePEnforcer(il InterfaceList, p Policy) (*PEnforcer, error) {
 	enf.OutputPolicy.RemoveDuplicateTransitions()
 
 	enf.InputPolicy = DeriveInputEnforcerPolicy(il, enf.OutputPolicy)
-	//enf.InputPolicy.RemoveNilTransitions()
+	enf.InputPolicy.RemoveNilTransitions()
 	enf.InputPolicy.RemoveDuplicateTransitions()
-	//enf.InputPolicy.RemoveAlwaysTrueTransitions()
+	enf.InputPolicy.RemoveAlwaysTrueTransitions()
 
 	return enf, nil
 }
@@ -176,6 +176,8 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 		return STExpressionSolution{Expressions: solutionExpressions, Comment: fmt.Sprintf("Recovery instructions manually provided.")}
 	}
 
+	fmt.Printf("Automatically deriving a solution for violation transition \r\n\t%s -> %s on (%s)\r\n\t(If this is undesirable behaviour, use a 'recover' keyword in the erte file to manually specify solution)\r\n", tr.Source, tr.Destination, stconverter.CCompileExpression(tr.STGuard))
+
 	posSolTrs := make([]PSTTransition, 0) //possible Solution Transitions
 	var pol PEnforcerPolicy
 	if inputPolicy {
@@ -198,12 +200,14 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 
 	// Make sure there's at least one solution
 	if len(posSolTrs) == 0 {
+		fmt.Printf("\tNOTE: No solution found!\r\n")
 		return STExpressionSolution{Expressions: nil, Comment: "No possible solutions!"}
 	}
 
 	//1. Check to see if there is a non-violating transition with an equivalent guard to the violating transition
 	for _, posSolTr := range posSolTrs {
 		if reflect.DeepEqual(tr.STGuard, posSolTr.STGuard) {
+			fmt.Printf("\tNOTE: (Certain) Solution found with no edits required! (Equivalent safe transition found)\r\n")
 			return STExpressionSolution{Expressions: nil, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" which has an equivalent guard, so no action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 		}
 	}
@@ -211,11 +215,21 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 	//2. Select first solution
 	posSolTr := posSolTrs[0]
 	solutions := SolveSTExpression(enf.interfaceList, inputPolicy, tr, posSolTr.STGuard)
+	if solutions == nil {
+		fmt.Printf("\tNOTE: (Guess) Solution found with no edits required! (I think the input policy has solved this transition already)\r\n")
+		return STExpressionSolution{Expressions: nil, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action was not required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
+	}
+
 	solutionExpressions := make([]string, len(solutions))
 	for i, soln := range solutions {
 		solutionExpressions[i] = stconverter.CCompileExpression(soln)
 	}
 
+	fmt.Printf("\tNOTE: (Guess) Solution found, and edits required! (I have selected a safe transition, and edited the I/O so that it can be taken)\r\n\tSelected transition: \"%s -> %s on %s\"\r\n", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)
+	fmt.Printf("\tNOTE: I will perform the following edits:\r\n")
+	for _, solnE := range solutionExpressions {
+		fmt.Printf("\t\t%s;\r\n", solnE)
+	}
 	return STExpressionSolution{Expressions: solutionExpressions, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 
 }
@@ -259,14 +273,14 @@ func ConvertPSTTransitionForInputPolicy(il InterfaceList, inputPolicy bool, outp
 			nonAcceptableNames[i] = v.Name
 		}
 	}
-	fmt.Printf("calling with %s\r\n", outpTrans.Condition)
+	//fmt.Printf("calling with %s\r\n", outpTrans.Condition)
 
 	retSTGuard := ConvertSTExpressionForPolicy(il, nonAcceptableNames, true, outpTrans.STGuard)
 
 	retTrans := outpTrans
 	retTrans.STGuard = retSTGuard
 	retTrans.Condition = stconverter.CCompileExpression(retSTGuard)
-	fmt.Printf("returning %s\r\n", retTrans.Condition)
+	//fmt.Printf("returning %s\r\n", retTrans.Condition)
 	return retTrans
 }
 
@@ -575,6 +589,9 @@ func SplitExpressionsOnOr(expr stconverter.STExpression) []stconverter.STExpress
 
 //DeepGetValues recursively gets all values from a given stconverter.STExpression
 func DeepGetValues(expr stconverter.STExpression) []string {
+	if expr == nil {
+		return nil
+	}
 	if val := expr.HasValue(); val != "" {
 		return []string{val}
 	}
@@ -633,7 +650,7 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition PST
 			}
 		}
 	} else {
-		if len(problemOutputs) == 0 {
+		if len(problemOutputs) == 0 && len(problemInputs) == 0 { //if problemInputs != 0, then it is likely this was fixed already
 			//this is a time-based problem on the outputs, so we'll use all outputs to fix it
 			nonAcceptableNames := make([]string, len(il.InputVars))
 			for i, v := range il.InputVars {
@@ -686,7 +703,6 @@ func SolveSTExpression(il InterfaceList, inputPolicy bool, problemTransition PST
 func STMakeSolutionAssignments(soln stconverter.STExpression) []stconverter.STExpression {
 	op := soln.HasOperator()
 	//if VARIABLE ONLY, 			return VARIABLE = 1
-	fmt.Printf("Solving %s\r\n", stconverter.CCompileExpression(soln))
 	if op == nil {
 		return []stconverter.STExpression{
 			stconverter.STExpressionOperator{
