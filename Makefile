@@ -15,6 +15,12 @@ example/ab5/F_ab5Function.c: easy-rte-c easy-rte-parser example/ab5/ab5.erte
 	./easy-rte-parser -i example/ab5 -o example/ab5
 	./easy-rte-c -i example/ab5 -o example/ab5
 
+example_ab5_vhdl: example/ab5/enforcer_ab5.vhdl
+
+example/ab5/enforcer_ab5.vhdl: easy-rte-c easy-rte-parser example/ab5/ab5.erte
+	./easy-rte-parser -i example/ab5 -o example/ab5
+	./easy-rte-c -i example/ab5 -o example/ab5 -l=vhdl
+
 example_robotable: example/robotable/robotable_main.c example/robotable/F_Robotable.c
 	gcc example/robotable/robotable_main.c example/robotable/F_Robotable.c -o example_robotable
 

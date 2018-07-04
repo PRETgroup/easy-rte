@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
+	"strings"
 	"text/template"
 
 	"github.com/PRETgroup/easy-rte/rtedef"
@@ -11,15 +12,21 @@ import (
 
 //Converter is the struct we use to store all functions for conversion (and what we operate from)
 type Converter struct {
-	Funcs []rtedef.EnforcedFunction
-
+	Funcs     []rtedef.EnforcedFunction
+	Language  string
 	templates *template.Template
 }
 
 //New returns a new instance of a Converter based on the provided language
-func New() (*Converter, error) {
-	return &Converter{Funcs: make([]rtedef.EnforcedFunction, 0), templates: cTemplates}, nil
-
+func New(language string) (*Converter, error) {
+	switch strings.ToLower(language) {
+	case "c":
+		return &Converter{Funcs: make([]rtedef.EnforcedFunction, 0), Language: "c", templates: cTemplates}, nil
+	case "vhdl":
+		return &Converter{Funcs: make([]rtedef.EnforcedFunction, 0), Language: "vhdl", templates: vhdlTemplates}, nil
+	default:
+		return nil, errors.New("Language " + language + " is not supported")
+	}
 }
 
 //AddFunction should be called for each Function in the project
@@ -52,22 +59,34 @@ type TemplateData struct {
 func (c *Converter) ConvertAll() ([]OutputFile, error) {
 	finishedConversions := make([]OutputFile, 0, len(c.Funcs))
 
+	type templateInfo struct {
+		Name      string
+		Extension string
+	}
+
+	var templates []templateInfo
+
 	//convert all functions
-	templates := []string{"functionC", "functionH"}
-	for _, templateName := range templates {
+	if c.Language == "c" {
+		templates = []templateInfo{
+			{"functionC", "c"},
+			{"functionH", "h"},
+		}
+	}
+	if c.Language == "vhdl" {
+		templates = []templateInfo{
+			{"functionVhdl", "vhdl"},
+		}
+	}
+	for _, template := range templates {
 		for i := 0; i < len(c.Funcs); i++ {
 
 			output := &bytes.Buffer{}
-			if err := c.templates.ExecuteTemplate(output, templateName, TemplateData{FunctionIndex: i, Functions: c.Funcs}); err != nil {
+			if err := c.templates.ExecuteTemplate(output, template.Name, TemplateData{FunctionIndex: i, Functions: c.Funcs}); err != nil {
 				return nil, errors.New("Couldn't format template (fb) of" + c.Funcs[i].Name + ": " + err.Error())
 			}
 
-			extension := "c"
-			if templateName == "functionH" {
-				extension = "h"
-			}
-
-			finishedConversions = append(finishedConversions, OutputFile{Name: "F_" + c.Funcs[i].Name, Extension: extension, Contents: output.Bytes()})
+			finishedConversions = append(finishedConversions, OutputFile{Name: "F_" + c.Funcs[i].Name, Extension: template.Extension, Contents: output.Bytes()})
 		}
 	}
 

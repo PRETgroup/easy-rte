@@ -14,6 +14,7 @@ import (
 var (
 	inFileName  = flag.String("i", "", "Specifies the name of the source file or directory of xml-type files to be compiled.")
 	outLocation = flag.String("o", "", "Specifies the name of the directory to put output files. If blank, uses current directory")
+	language    = flag.String("l", "c", "The output language")
 )
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 		return
 	}
 
-	conv, err := rtec.New()
+	conv, err := rtec.New(*language)
 	if err != nil {
 		fmt.Println("Error creating converter:", err.Error())
 		return

@@ -180,8 +180,7 @@ func isValidType(s string) bool {
 		s == "float" ||
 		s == "double" ||
 		s == "dtimer_t" ||
-		s == "rtimer_t" ||
-		s == "any" {
+		s == "rtimer_t" {
 		return true
 	}
 	return false
