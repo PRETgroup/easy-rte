@@ -115,7 +115,7 @@ func getVhdlType(ctype string) string {
 	case "double":
 		panic("Double type not allowed in conversion")
 	case "dtimer_t":
-		vhdlType = "usigned(63 downto 0)"
+		vhdlType = "unsigned(63 downto 0)"
 	case "rtimer_t":
 		panic("rtimer type not allowed in conversion")
 	default:

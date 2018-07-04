@@ -3,29 +3,26 @@ package rtec
 import "text/template"
 
 const rteVhdlTemplate = `{{define "_policyIn"}}{{$block := .}}
-	//input policies
+	--input policies
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
 	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
-	{{else}}{{/* this is where the policy comes in */}}//INPUT POLICY {{$pol.Name}} BEGIN 
-		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+	{{else}}{{/* this is where the policy comes in */}}--INPUT POLICY {{$pol.Name}} BEGIN 
+		case {{$pol.Name}}_state is
+			{{range $sti, $st := $pol.States}}when s_{{$pol.Name}}_{{$st.Name}}=>
 				{{range $tri, $tr := $pfbEnf.InputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getVhdlECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) {
-					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
-					//select a transition to solve the problem
+				if({{$cond := getVhdlECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) then
+					--transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
+					--select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr true}}
-					{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
+					{{if $solution.Comment}}--{{$solution.Comment}}{{end}}
 					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getVhdlECCTransitionCondition $block $sole}}{{$sol.IfCond}};
 					{{end}}
-				} {{end}}{{end}}
-				
-				break;
-
+				end if; {{end}}{{end}}
 			{{end}}
-		}
+		end if;
 	{{end}}
-	//INPUT POLICY {{$pol.Name}} END
+	--INPUT POLICY {{$pol.Name}} END
 	{{end}}
 {{end}}
 
@@ -118,9 +115,24 @@ architecture rtl of enforcer_{{$block.Name}} is
 {{end}}
 begin
 
+	process(CLOCK)
+	{{range $index, $var := $block.InputVars}}
+		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
+	{{end}}
+	{{range $index, $var := $block.OutputVars}}
+		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
+	{{end}}
+	begin
+		if (rising_edge(CLOCK)) then
+			--capture synchronous inputs
+		{{range $index, $var := $block.InputVars}}
+			{{$var.Name}}_ptc := {{$var.Name}}_ptc_in;
+		{{end}}
 
-
-
+		{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
+		
+		end if;
+	end process;
 end architecture;{{end}}`
 
 var vhdlTemplateFuncMap = template.FuncMap{
