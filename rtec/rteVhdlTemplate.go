@@ -1,6 +1,10 @@
 package rtec
 
-import "text/template"
+import (
+	"text/template"
+
+	"github.com/PRETgroup/goFB/goFB/stconverter"
+)
 
 const rteVhdlTemplate = `{{define "_policyIn"}}{{$block := .}}
 	--input policies
@@ -11,12 +15,12 @@ const rteVhdlTemplate = `{{define "_policyIn"}}{{$block := .}}
 			{{range $sti, $st := $pol.States}}when s_{{$pol.Name}}_{{$st.Name}}=>
 				{{range $tri, $tr := $pfbEnf.InputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getVhdlECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) then
+				if({{$cond := getVhdlECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) then
 					--transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					--select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr true}}
 					{{if $solution.Comment}}--{{$solution.Comment}}{{end}}
-					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getVhdlECCTransitionCondition $block $sole}}{{$sol.IfCond}};
+					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getVhdlECCTransitionCondition $block (compileExpression $sole)}}{{$sol.IfCond}};
 					{{end}}
 				end if; {{end}}{{end}}
 			{{end}}
@@ -35,12 +39,12 @@ const rteVhdlTemplate = `{{define "_policyIn"}}{{$block := .}}
 			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
 				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getVhdlECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) {
+				if({{$cond := getVhdlECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
 					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					//select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr false}}
 					{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
-					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getVhdlECCTransitionCondition $block $sole}}{{$sol.IfCond}};
+					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getVhdlECCTransitionCondition $block (compileExpression $sole)}}{{$sol.IfCond}};
 					{{end}}
 				} {{end}}{{end}}
 
@@ -86,13 +90,13 @@ use ieee.numeric_std.all;
 entity enforcer_{{$block.Name}} is
 	port (
 		{{range $index, $var := $block.InputVars}}
-		{{$var.Name}}_ptc_in : in {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
-		{{$var.Name}}_ptc_out : out {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
+		{{$var.Name}}_ptc_in : in {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
+		{{$var.Name}}_ptc_out : out {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
 		{{end}}
 
 		{{range $index, $var := $block.OutputVars}}
-		{{$var.Name}}_ctp_in : in {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
-		{{$var.Name}}_ctp_out : out {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
+		{{$var.Name}}_ctp_in : in {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
+		{{$var.Name}}_ctp_out : out {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
 		{{end}}
 
 		CLOCK: in std_logic
@@ -117,16 +121,16 @@ begin
 
 	process(CLOCK)
 	{{range $index, $var := $block.InputVars}}
-		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
+		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
 	{{end}}
 	{{range $index, $var := $block.OutputVars}}
-		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
+		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
 	{{end}}
 	begin
 		if (rising_edge(CLOCK)) then
 			--capture synchronous inputs
 		{{range $index, $var := $block.InputVars}}
-			{{$var.Name}}_ptc := {{$var.Name}}_ptc_in;
+			{{$var.Name}} := {{$var.Name}}_ptc_in;
 		{{end}}
 
 		{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
@@ -139,6 +143,8 @@ var vhdlTemplateFuncMap = template.FuncMap{
 	"getVhdlECCTransitionCondition": getVhdlECCTransitionCondition,
 	"getVhdlType":                   getVhdlType,
 	"getPolicyEnfInfo":              getPolicyEnfInfo,
+
+	"compileExpression": stconverter.VhdlCompileExpression,
 }
 
 var vhdlTemplates = template.Must(template.New("").Funcs(vhdlTemplateFuncMap).Parse(rteVhdlTemplate))

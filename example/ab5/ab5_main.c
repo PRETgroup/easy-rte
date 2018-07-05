@@ -20,13 +20,13 @@ int main() {
             inputs.A = false;
         }
 
-        ab5Function_run_via_enforcer(&enf, inputs, &outputs);
+        ab5Function_run_via_enforcer(&enf, &inputs, &outputs);
 
         print_data(count, inputs, outputs);
     }
 }
 
-void ab5Function_run(inputs_ab5Function_t inputs, outputs_ab5Function_t *outputs) {
+void ab5Function_run(inputs_ab5Function_t *inputs, outputs_ab5Function_t *outputs) {
     //do nothing
 }
 

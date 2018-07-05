@@ -147,7 +147,7 @@ func (pol *PEnforcerPolicy) RemoveAlwaysTrueTransitions() {
 
 //STExpressionSolution stores a solution to a violation transition
 type STExpressionSolution struct {
-	Expressions []string
+	Expressions []stconverter.STExpression
 	Comment     string
 }
 
@@ -169,11 +169,11 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 				},
 			})
 		}
-		solutionExpressions := make([]string, len(solution))
-		for i, soln := range solution {
-			solutionExpressions[i] = stconverter.CCompileExpression(soln)
-		}
-		return STExpressionSolution{Expressions: solutionExpressions, Comment: fmt.Sprintf("Recovery instructions manually provided.")}
+		// solutionExpressions := make([]string, len(solution))
+		// for i, soln := range solution {
+		// 	solutionExpressions[i] = stconverter.CCompileExpression(soln)
+		// }
+		return STExpressionSolution{Expressions: solution, Comment: fmt.Sprintf("Recovery instructions manually provided.")}
 	}
 
 	fmt.Printf("Automatically deriving a solution for violation transition \r\n\t%s -> %s on (%s)\r\n\t(If this is undesirable behaviour, use a 'recover' keyword in the erte file to manually specify solution)\r\n", tr.Source, tr.Destination, stconverter.CCompileExpression(tr.STGuard))
@@ -220,17 +220,17 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 		return STExpressionSolution{Expressions: nil, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action was not required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 	}
 
-	solutionExpressions := make([]string, len(solutions))
-	for i, soln := range solutions {
-		solutionExpressions[i] = stconverter.CCompileExpression(soln)
-	}
+	// solutionExpressions := make([]string, len(solutions))
+	// for i, soln := range solutions {
+	// 	solutionExpressions[i] = stconverter.CCompileExpression(soln)
+	// }
 
 	fmt.Printf("\tNOTE: (Guess) Solution found, and edits required! (I have selected a safe transition, and edited the I/O so that it can be taken)\r\n\tSelected transition: \"%s -> %s on %s\"\r\n", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)
 	fmt.Printf("\tNOTE: I will perform the following edits:\r\n")
-	for _, solnE := range solutionExpressions {
-		fmt.Printf("\t\t%s;\r\n", solnE)
+	for _, solnE := range solutions {
+		fmt.Printf("\t\t%s;\r\n", stconverter.STCompileExpression(solnE))
 	}
-	return STExpressionSolution{Expressions: solutionExpressions, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
+	return STExpressionSolution{Expressions: solutions, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" and action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 
 }
 
@@ -279,7 +279,7 @@ func ConvertPSTTransitionForInputPolicy(il InterfaceList, inputPolicy bool, outp
 
 	retTrans := outpTrans
 	retTrans.STGuard = retSTGuard
-	retTrans.Condition = stconverter.CCompileExpression(retSTGuard)
+	retTrans.Condition = stconverter.STCompileExpression(retSTGuard)
 	//fmt.Printf("returning %s\r\n", retTrans.Condition)
 	return retTrans
 }
@@ -474,7 +474,7 @@ func SplitPSTTransitions(cTrans []PSTTransition) []PSTTransition {
 				PTransition: cTran.PTransition,
 			}
 			//recompile the condition
-			newTrans.PTransition.Condition = stconverter.CCompileExpression(splitTrans[len(splitTrans)-j-1])
+			newTrans.PTransition.Condition = stconverter.STCompileExpression(splitTrans[len(splitTrans)-j-1])
 			newTrans.STGuard = splitTrans[len(splitTrans)-j-1]
 
 			brTrans = append(brTrans, newTrans)
@@ -814,6 +814,6 @@ func STMakeSolutionAssignments(soln stconverter.STExpression) []stconverter.STEx
 	}
 
 	//If still here, we don't know what to do
-	fmt.Println("WARNING: I couldn't solve guard \"", stconverter.CCompileExpression(soln), "\"")
+	fmt.Println("WARNING: I couldn't solve guard \"", stconverter.STCompileExpression(soln), "\"")
 	return nil
 }

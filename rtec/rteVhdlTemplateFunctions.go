@@ -1,6 +1,7 @@
 package rtec
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -91,25 +92,26 @@ func getVhdlType(ctype string) string {
 
 	switch strings.ToLower(ctype) {
 	case "bool":
-		vhdlType = "std_logic"
+		vhdlType = "bit"
 	case "char":
-		vhdlType = "unsigned(7 downto 0)"
+		vhdlType = "integer range 0 to (2**8 - 1)"
 	case "uint8_t":
-		vhdlType = "unsigned(7 downto 0)"
+		vhdlType = "integer range 0 to (2**8 - 1)"
 	case "uint16_t":
-		vhdlType = "unsigned(15 downto 0)"
+		vhdlType = "integer range 0 to (2**16 - 1)"
 	case "uint32_t":
-		vhdlType = "unsigned(31 downto 0)"
+		fmt.Printf("WARNING: uint32_t type constrainted to max value 2^31-1 in VHDL")
+		vhdlType = "integer range 0 to (2**31 - 1)"
 	case "uint64_t":
-		vhdlType = "unsigned(63 downto 0)"
+		panic("uint16_t type not allowed in conversion")
 	case "int8_t":
-		vhdlType = "signed(7 downto 0)"
+		vhdlType = "integer range -(2**7) to (2**7-1)"
 	case "int16_t":
-		vhdlType = "signed(15 downto 0)"
+		vhdlType = "integer range -(2**15) to (2**15-1)"
 	case "int32_t":
-		vhdlType = "signed(31 downto 0)"
+		vhdlType = "integer"
 	case "int64_t":
-		vhdlType = "signed(63 downto 0)"
+		panic("int64_t type not allowed in conversion")
 	case "float":
 		panic("Float type not allowed in conversion")
 	case "double":
