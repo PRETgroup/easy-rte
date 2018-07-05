@@ -26,6 +26,8 @@ func New(language string) (*Converter, error) {
 	case "vhdl":
 		fmt.Println("WARNING: VHDL compilation support is currently not working due to problems with the VHDL type system. Try Verilog instead.")
 		return &Converter{Funcs: make([]rtedef.EnforcedFunction, 0), Language: "vhdl", templates: vhdlTemplates}, nil
+	case "verilog":
+		return &Converter{Funcs: make([]rtedef.EnforcedFunction, 0), Language: "verilog", templates: verilogTemplates}, nil
 	default:
 		return nil, errors.New("Language " + language + " is not supported")
 	}
@@ -78,6 +80,11 @@ func (c *Converter) ConvertAll() ([]OutputFile, error) {
 	if c.Language == "vhdl" {
 		templates = []templateInfo{
 			{"functionVhdl", "vhdl"},
+		}
+	}
+	if c.Language == "verilog" {
+		templates = []templateInfo{
+			{"functionVerilog", "v"},
 		}
 	}
 	for _, template := range templates {

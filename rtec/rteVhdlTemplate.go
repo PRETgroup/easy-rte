@@ -60,7 +60,7 @@ const rteVhdlTemplate = `{{define "_policyIn"}}{{$block := .}}
 			{{range $sti, $st := $pol.States}}when s_{{$pol.Name}}_{{$st.Name}} =>
 				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if ({{$cond := getVhdlECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) then
+				if ({{$cond := getVhdlECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) then
 					--transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					{{$pol.Name}}_state := s_{{$pol.Name}}_{{$tr.Destination}};
 					--set expressions
