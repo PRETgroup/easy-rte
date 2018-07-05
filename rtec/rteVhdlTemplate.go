@@ -9,13 +9,13 @@ import (
 const rteVhdlTemplate = `{{define "_policyIn"}}{{$block := .}}
 	--input policies
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
-	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
+	{{if not $pfbEnf}}--{{$pol.Name}} is broken!
 	{{else}}{{/* this is where the policy comes in */}}--INPUT POLICY {{$pol.Name}} BEGIN 
 		case {{$pol.Name}}_state is
-			{{range $sti, $st := $pol.States}}when s_{{$pol.Name}}_{{$st.Name}}=>
+			{{range $sti, $st := $pol.States}}when s_{{$pol.Name}}_{{$st.Name}} =>
 				{{range $tri, $tr := $pfbEnf.InputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getVhdlECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) then
+				if ({{$cond := getVhdlECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) then
 					--transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					--select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr true}}
@@ -24,58 +24,54 @@ const rteVhdlTemplate = `{{define "_policyIn"}}{{$block := .}}
 					{{end}}
 				end if; {{end}}{{end}}
 			{{end}}
-		end if;
+		end case;
 	{{end}}
 	--INPUT POLICY {{$pol.Name}} END
 	{{end}}
 {{end}}
 
 {{define "_policyOut"}}{{$block := .}}
-	//output policies
+	--output policies
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
-	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
-	{{else}}{{/* this is where the policy comes in */}}//OUTPUT POLICY {{$pol.Name}} BEGIN 
-		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+	{{if not $pfbEnf}}--{{$pol.Name}} is broken!
+	{{else}}{{/* this is where the policy comes in */}}--OUTPUT POLICY {{$pol.Name}} BEGIN 
+		case {{$pol.Name}}_state is 
+			{{range $sti, $st := $pol.States}}when s_{{$pol.Name}}_{{$st.Name}} =>
 				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getVhdlECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
-					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
-					//select a transition to solve the problem
+				if ({{$cond := getVhdlECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) then
+					--transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
+					--select a transition to solve the problem
 					{{$solution := $pfbEnf.SolveViolationTransition $tr false}}
-					{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
+					{{if $solution.Comment}}--{{$solution.Comment}}{{end}}
 					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getVhdlECCTransitionCondition $block (compileExpression $sole)}}{{$sol.IfCond}};
 					{{end}}
-				} {{end}}{{end}}
-
-				break;
+				end if; {{end}}{{end}}
 
 			{{end}}
-		}
+		end case;
 
-		//advance timers
+		--advance timers
 		{{range $varI, $var := $pfbEnf.OutputPolicy.GetDTimers}}
-		me->{{$var.Name}}++;{{end}}
+		{{$var.Name}} := {{$var.Name}} + 1;{{end}}
 
-		//select transition to advance state
-		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+		--select transition to advance state
+		case {{$pol.Name}}_state is
+			{{range $sti, $st := $pol.States}}when s_{{$pol.Name}}_{{$st.Name}} =>
 				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
 				*/}}
-				if({{$cond := getVhdlECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) {
-					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
-					me->_policy_{{$pol.Name}}_state = POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$tr.Destination}};
-					//set expressions
+				if ({{$cond := getVhdlECCTransitionCondition $block $tr.Condition}}{{$cond.IfCond}}) then
+					--transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
+					{{$pol.Name}}_state := s_{{$pol.Name}}_{{$tr.Destination}};
+					--set expressions
 					{{range $exi, $ex := $tr.Expressions}}
-					me->{{$ex.VarName}} = {{$ex.Value}};{{end}}
-				} {{end}}{{end}}
-				
-				break;
+					{{$ex.VarName}} := {{$ex.Value}};{{end}}
+				end if; {{end}}{{end}}
 
 			{{end}}
-		}
+		end case;
 	{{end}}
-	//OUTPUT POLICY {{$pol.Name}} END
+	--OUTPUT POLICY {{$pol.Name}} END
 	{{end}}
 {{end}}
 
@@ -112,20 +108,19 @@ architecture rtl of enforcer_{{$block.Name}} is
 	);
 
 	signal {{$pol.Name}}_state : {{$pol.Name}}_state_type := {{if len $pol.States}}{{$state := index $pol.States 0}}s_{{$pol.Name}}_{{$state}}{{else}}s_{{$pol.Name}}_unknown{{end}};
-
-	{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}--Policy is broken!{{else}}--internal vars
-		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
-	{{end}}{{end}}
 {{end}}
 begin
 
 	process(CLOCK)
 	{{range $index, $var := $block.InputVars}}
-		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
-	{{end}}
-	{{range $index, $var := $block.OutputVars}}
-		{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
-	{{end}}
+		variable {{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
+	{{end}}{{range $index, $var := $block.OutputVars}}
+		variable {{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := {{$var.InitialValue}}{{end}};
+	{{end}}{{range $polI, $pol := $block.Policies}}
+	{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}--Policy is broken!{{else}}--internal vars
+		variable {{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{$var.Name}} : {{getVhdlType $var.Type}}{{if $var.InitialValue}} := "{{$var.InitialValue}}"{{end}};
+	{{end}}{{end}}{{end}}
+
 	begin
 		if (rising_edge(CLOCK)) then
 			--capture synchronous inputs
@@ -134,6 +129,8 @@ begin
 		{{end}}
 
 		{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
+
+		{{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
 		
 		end if;
 	end process;

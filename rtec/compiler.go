@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -23,6 +24,7 @@ func New(language string) (*Converter, error) {
 	case "c":
 		return &Converter{Funcs: make([]rtedef.EnforcedFunction, 0), Language: "c", templates: cTemplates}, nil
 	case "vhdl":
+		fmt.Println("WARNING: VHDL compilation support is currently not working due to problems with the VHDL type system. Try Verilog instead.")
 		return &Converter{Funcs: make([]rtedef.EnforcedFunction, 0), Language: "vhdl", templates: vhdlTemplates}, nil
 	default:
 		return nil, errors.New("Language " + language + " is not supported")
