@@ -55,7 +55,7 @@ int main() {
     inputs.reqLocY = -12;
 
     uint32_t count = 0;
-    while(count++ < 18) {
+    while(count++ < 20) {
 
         Robotable_run_via_enforcer(&enf, &inputs, &outputs);
 

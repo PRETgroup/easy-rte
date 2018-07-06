@@ -7,79 +7,85 @@ import (
 )
 
 const rtecTemplate = `{{define "_policyIn"}}{{$block := .}}
-	//input policies
-	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
-	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
-	{{else}}{{/* this is where the policy comes in */}}//INPUT POLICY {{$pol.Name}} BEGIN 
-		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
-				{{range $tri, $tr := $pfbEnf.InputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
-				*/}}
-				if({{$cond := getCECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
-					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
-					//select a transition to solve the problem
-					{{$solution := $pfbEnf.SolveViolationTransition $tr true}}
-					{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
-					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getCECCTransitionCondition $block (compileExpression $sole)}}{{$sol.IfCond}};
-					{{end}}
-				} {{end}}{{end}}
-				
-				break;
+//input policies
+{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
+{{if not $pfbEnf}}//{{$pol.Name}} is broken!
+{{else}}{{/* this is where the policy comes in */}}//INPUT POLICY {{$pol.Name}} BEGIN
+//This will run the input enforcer for {{$block.Name}}'s policy {{$pol.Name}}
+void {{$block.Name}}_run_input_enforcer_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs) {
+	switch(me->_policy_{{$pol.Name}}_state) {
+		{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+			{{range $tri, $tr := $pfbEnf.InputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
+			*/}}
+			if({{$cond := getCECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
+				//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
+				//select a transition to solve the problem
+				{{$solution := $pfbEnf.SolveViolationTransition $tr true}}
+				{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
+				{{range $soleI, $sole := $solution.Expressions}}{{$sol := getCECCTransitionCondition $block (compileExpression $sole)}}{{$sol.IfCond}};
+				{{end}}
+			} {{end}}{{end}}
+			
+			break;
 
-			{{end}}
-		}
-	{{end}}
-	//INPUT POLICY {{$pol.Name}} END
-	{{end}}
+		{{end}}
+	}
+}
 {{end}}
+//INPUT POLICY {{$pol.Name}} END
+{{end}}{{end}}
 
 {{define "_policyOut"}}{{$block := .}}
-	//output policies
-	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
-	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
-	{{else}}{{/* this is where the policy comes in */}}//OUTPUT POLICY {{$pol.Name}} BEGIN 
-		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
-				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
-				*/}}
-				if({{$cond := getCECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
-					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
-					//select a transition to solve the problem
-					{{$solution := $pfbEnf.SolveViolationTransition $tr false}}
-					{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
-					{{range $soleI, $sole := $solution.Expressions}}{{$sol := getCECCTransitionCondition $block (compileExpression $sole)}}{{$sol.IfCond}};
-					{{end}}
-				} {{end}}{{end}}
+//output policies
+{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
+{{if not $pfbEnf}}//{{$pol.Name}} is broken!
+{{else}}{{/* this is where the policy comes in */}}//OUTPUT POLICY {{$pol.Name}} BEGIN
+//This will run the input enforcer for {{$block.Name}}'s policy {{$pol.Name}}
+void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs) {
+	//advance timers
+	{{range $varI, $var := $pfbEnf.OutputPolicy.GetDTimers}}
+	me->{{$var.Name}}++;{{end}}
+	
+	//run enforcer
+	switch(me->_policy_{{$pol.Name}}_state) {
+		{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+			{{range $tri, $tr := $pfbEnf.OutputPolicy.GetViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
+			*/}}
+			if({{$cond := getCECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
+				//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
+				//select a transition to solve the problem
+				{{$solution := $pfbEnf.SolveViolationTransition $tr false}}
+				{{if $solution.Comment}}//{{$solution.Comment}}{{end}}
+				{{range $soleI, $sole := $solution.Expressions}}{{$sol := getCECCTransitionCondition $block (compileExpression $sole)}}{{$sol.IfCond}};
+				{{end}}
+			} {{end}}{{end}}
 
-				break;
+			break;
 
-			{{end}}
-		}
+		{{end}}
+	}
 
-		//advance timers
-		{{range $varI, $var := $pfbEnf.OutputPolicy.GetDTimers}}
-		me->{{$var.Name}}++;{{end}}
+	//select transition to advance state
+	switch(me->_policy_{{$pol.Name}}_state) {
+		{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
+			{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
+			*/}}
+			if({{$cond := getCECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
+				//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
+				me->_policy_{{$pol.Name}}_state = POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$tr.Destination}};
+				//set expressions
+				{{range $exi, $ex := $tr.Expressions}}
+				me->{{$ex.VarName}} = {{$ex.Value}};{{end}}
+			} {{end}}{{end}}
+			
+			break;
 
-		//select transition to advance state
-		switch(me->_policy_{{$pol.Name}}_state) {
-			{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
-				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
-				*/}}
-				if({{$cond := getCECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
-					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
-					me->_policy_{{$pol.Name}}_state = POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$tr.Destination}};
-					//set expressions
-					{{range $exi, $ex := $tr.Expressions}}
-					me->{{$ex.VarName}} = {{$ex.Value}};{{end}}
-				} {{end}}{{end}}
-				
-				break;
-
-			{{end}}
-		}
-	{{end}}
-	//OUTPUT POLICY {{$pol.Name}} END
-	{{end}}
+		{{end}}
+	}
+}
+{{end}}
+//OUTPUT POLICY {{$pol.Name}} END
+{{end}}
 {{end}}
 
 {{define "functionH"}}{{$block := index .Functions .FunctionIndex}}{{$blocks := .Functions}}
@@ -131,6 +137,18 @@ void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs
 //This function is provided from the user
 //It is the controller function
 extern void {{$block.Name}}_run(inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs);
+
+//enforcer functions
+
+{{range $polI, $pol := $block.Policies}}
+//This function is provided in "F_{{$block.Name}}.c"
+//It will run the input enforcer for {{$block.Name}}'s policy {{$pol.Name}}
+void {{$block.Name}}_run_input_enforcer_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs);
+
+//This function is provided in "F_{{$block.Name}}.c"
+//It will run the input enforcer for {{$block.Name}}'s policy {{$pol.Name}}
+void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs);
+{{end}}
 {{end}}
 
 {{define "functionC"}}{{$block := index .Functions .FunctionIndex}}{{$blocks := .Functions}}
@@ -159,12 +177,23 @@ void {{$block.Name}}_init_all_vars(enforcervars_{{$block.Name}}_t* me, inputs_{{
 }
 
 void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs) {
-	{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
+	//run the policies in reverse order for the inputs (last policies have highest priority)
+	{{$lpol := len $block.Policies}}
+	{{range $polI, $pol_unused := $block.Policies}}{{$acti := sub (sub $lpol 1) $polI}}{{$pol := index $block.Policies $acti}} {{$block.Name}}_run_input_enforcer_{{$pol.Name}}(me, inputs);
+	{{end}}
 
 	{{$block.Name}}_run(inputs, outputs);
 
-	{{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
-}{{end}}`
+	//run policies in specified order for outputs
+	{{range $polI, $pol := $block.Policies}}{{$block.Name}}_run_output_enforcer_{{$pol.Name}}(me, inputs,outputs);
+	{{end}}
+}
+
+{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
+
+{{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
+
+{{end}}`
 
 var cTemplateFuncMap = template.FuncMap{
 	"getCECCTransitionCondition": getCECCTransitionCondition,
@@ -172,6 +201,8 @@ var cTemplateFuncMap = template.FuncMap{
 	"getPolicyEnfInfo": getPolicyEnfInfo,
 
 	"compileExpression": stconverter.CCompileExpression,
+
+	"sub": sub,
 }
 
 var cTemplates = template.Must(template.New("").Funcs(cTemplateFuncMap).Parse(rtecTemplate))

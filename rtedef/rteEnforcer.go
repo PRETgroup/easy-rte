@@ -111,8 +111,8 @@ func MakePEnforcer(il InterfaceList, p Policy) (*PEnforcer, error) {
 //RemoveNilTransitions will do a search through a policies transitions and remove any that have nil guards
 func (pol *PEnforcerPolicy) RemoveNilTransitions() {
 	for i := 0; i < len(pol.Transitions); i++ {
-		for j := i + 1; j < len(pol.Transitions); j++ {
-			if pol.Transitions[j].STGuard == nil {
+		for j := i; j < len(pol.Transitions); j++ {
+			if pol.Transitions[j].STGuard == nil || pol.Transitions[j].Condition == "" || stconverter.STCompileExpression(pol.Transitions[j].STGuard) == "" {
 				pol.Transitions = append(pol.Transitions[:j], pol.Transitions[j+1:]...)
 				j--
 			}
@@ -136,7 +136,7 @@ func (pol *PEnforcerPolicy) RemoveDuplicateTransitions() {
 //RemoveAlwaysTrueTransitions will do a search through a policies transitions and remove any that are just "true"
 func (pol *PEnforcerPolicy) RemoveAlwaysTrueTransitions() {
 	for i := 0; i < len(pol.Transitions); i++ {
-		for j := i + 1; j < len(pol.Transitions); j++ {
+		for j := i; j < len(pol.Transitions); j++ {
 			if val := pol.Transitions[j].STGuard.HasValue(); val == "true" || val == "1" {
 				pol.Transitions = append(pol.Transitions[:j], pol.Transitions[j+1:]...)
 				j--

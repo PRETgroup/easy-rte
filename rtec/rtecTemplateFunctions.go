@@ -94,5 +94,12 @@ func getPolicyEnfInfo(function rtedef.EnforcedFunction, policyIndex int) *rtedef
 	if err != nil {
 		return nil
 	}
+	//Uncomment these two lines to generate the intermediate enforcer JSON file
+	//bytes, _ := json.MarshalIndent(enfPol, "", "\t")
+	//ioutil.WriteFile(function.Name+".json", bytes, 0644)
 	return enfPol
+}
+
+func sub(a, b int) int {
+	return a - b
 }
