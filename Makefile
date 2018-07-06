@@ -28,6 +28,12 @@ example/robotable/F_Robotable.c: easy-rte-c easy-rte-parser example/robotable/ro
 	./easy-rte-parser -i example/robotable -o example/robotable
 	./easy-rte-c -i example/robotable -o example/robotable
 
+example_robotable_verilog: example/robotable/enforcer_robotable.v
+
+example/robotable/enforcer_robotable.v: easy-rte-c easy-rte-parser example/robotable/robotable.erte
+	./easy-rte-parser -i example/robotable -o example/robotable
+	./easy-rte-c -i example/robotable -o example/robotable -l=verilog
+
 clean:
 	rm -f easy-rte-c
 	rm -f easy-rte-parser
