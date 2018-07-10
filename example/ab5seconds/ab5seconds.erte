@@ -1,0 +1,66 @@
+//this version of ab5 assumes that each tick is 20ns, and we want to have an A for 1 second then a B for 1 second before 5 seconds is up
+//hence the large timer vals
+function ab5Function;
+interface of ab5Function {
+	in bool A;  //in here means that they're going from PLANT to CONTROLLER
+	out bool B; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy AB5 of ab5Function {
+	internals {
+		dtimer_t v;
+	}
+
+	states {
+
+		//first state is initial, and represents "We're waiting for an A"
+		await_A {
+			//if we receive neither A nor B, do nothing														
+			-> await_A on (!A and !B): v := 0;
+
+			//if we receive an A only, head to state s1							
+			-> hold_A on (A and !B): v := 0;
+			
+			//if we receive a B, or an A and a B (i.e. if we receive a B) then VIOLATION							
+			-> violation on ((!A and B) or (A and B));	
+		}
+
+
+		hold_A {
+			//if we receive A, then stay in this state up until the 1 second mark
+			-> hold_A on (A and !B and v < 50000000);
+
+			//once the timer is done proceed to await_B
+			-> await_B on (!B and v >= 50000000): v:= 0;
+
+			//if we receive a B in this state, or A drops, then it's a violation
+			-> violation on (!A) recover A := 1;
+			-> violation on (B) recover B := 0;
+
+		}
+
+		//await_B is "we're waiting for a B, and it needs to get here within 5 seconds"
+		await_B {
+			//if we receive nothing, and we aren't over-time, then we do nothing														
+			-> await_B on (!A and !B and v < 250000000);	
+
+			//if we receive a B only, head to state hold_B					
+			-> hold_B on (!A and B): v:= 0;
+
+			//if we go overtime, or we receive another A, then VIOLATION			
+			-> violation on ((v >= 250000000) or (A and B) or (A and !B));
+		}
+
+		hold_B {
+			//if we receive B, then stay in this state up until the 1 second mark
+			-> hold_B on (!A and B and v < 50000000);
+
+			//once the timer is done proceed to await_B
+			-> await_A on (!A and v >= 50000000): v:= 0;
+
+			//if we receive a B in this state, or A drops, then it's a violation
+			-> violation on (A) recover A := 0;
+			-> violation on (!B) recover B := 1;
+		}
+	}
+}

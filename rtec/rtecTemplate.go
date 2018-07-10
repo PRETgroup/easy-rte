@@ -100,8 +100,8 @@ typedef uint64_t dtimer_t;
 
 //For each policy, we need an enum type for the state machine
 {{range $polI, $pol := $block.Policies}}
-enum {{$block.Name}}_policy_{{$pol.Name}}_states { {{if len $pol.States}}{{range $index, $state := $pol.States}}
-	POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$state}}{{if not $index}}, {{end}}{{end}}{{else}}POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_unknown{{end}} 
+enum {{$block.Name}}_policy_{{$pol.Name}}_states { {{if len $pol.States}}{{range $index, $state := $pol.States}}{{if $index}}, {{end}}
+	POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$state}}{{end}}{{else}}POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_unknown{{end}} 
 };
 {{end}}
 
