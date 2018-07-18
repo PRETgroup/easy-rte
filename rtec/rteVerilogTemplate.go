@@ -89,12 +89,12 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 
 module enforcer_{{$block.Name}} (
 	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
-	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}},
-	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}},
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in{{if $var.InitialValue}},
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out{{if $var.InitialValue}},
 	{{end}}
 	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
-	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_in{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}},
-	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}},
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_in{{if $var.InitialValue}},
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out{{if $var.InitialValue}},
 	{{end}}
 	input wire CLOCK
 );

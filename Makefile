@@ -30,7 +30,7 @@ example/ab5seconds/F_ab5Function.c: easy-rte-c easy-rte-parser example/ab5second
 
 example_ab5seconds_verilog: example/ab5seconds/enforcer_ab5.v
 
-example/ab5seconds/enforcer_ab5.v: easy-rte-c easy-rte-parser example/ab5seconds/ab5.erte
+example/ab5seconds/enforcer_ab5.v: easy-rte-c easy-rte-parser example/ab5seconds/ab5seconds.erte
 	./easy-rte-parser -i example/ab5seconds -o example/ab5seconds
 	./easy-rte-c -i example/ab5seconds -o example/ab5seconds -l=verilog
 
