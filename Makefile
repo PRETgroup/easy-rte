@@ -11,6 +11,8 @@ easy-rte-parser: rteparser/* rtedef/*
 example_ab5: example/ab5/ab5_main.c example/ab5/F_ab5Function.c
 	gcc example/ab5/ab5_main.c example/ab5/F_ab5Function.c -o example_ab5
 
+#example/%/F_%.c: easy-rte-c easy-rte-parser example/%/%.erte
+
 example/ab5/F_ab5Function.c: easy-rte-c easy-rte-parser example/ab5/ab5.erte
 	./easy-rte-parser -i example/ab5 -o example/ab5
 	./easy-rte-c -i example/ab5 -o example/ab5

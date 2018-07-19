@@ -16,7 +16,8 @@ easy-rte-parser
 #ignore built examples 
 example_*
 
-#ignore stuff in the example dirs unless it ends in *.erte or *main.c
+#ignore stuff in the example dirs unless it ends in *.erte or *main.c or md
 example/*/*
 !*.erte
 !*main.c
+!*.md

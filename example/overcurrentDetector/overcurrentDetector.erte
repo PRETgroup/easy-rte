@@ -1,0 +1,44 @@
+function overcurrentDetector;
+interface of overcurrentDetector {
+	//in here means that they're going from PLANT to CONTROLLER
+	//The input to the controller is the sensed current in mA
+	in int32_t I_mA;
+
+	//out here means that they're going from CONTROLLER to PLANT
+	//The output from the controller is the relay_en signal (i.e. '1' is 'engage')
+	out bool relay_en;
+}
+
+//We're using the IDMT formula `t = (K*B) / ((I / Iset)^a - 1)`
+//With `B` = 13.5, and `a` = 1
+//This means that we can remove the `^a` from the formula entirely.
+policy IDMT of overcurrentDetector {
+	internals {
+		//0.1K and 13.5 B are multiplied together, and we want to output 
+		//final result in microseconds (to make discrete math easier). 
+		//So, we multiply B by 10, and K by 100,000
+		int32_t K = 10000;	
+		int32_t B = 135;	
+		int32_t Iset_mA = 1000;	//1A is nominal safe current
+
+		dtimer t;
+	}
+
+	state s_off {
+		-> s_safe on relay_en;
+		-> s_off on !relay_en;
+	}
+
+	state s_safe {	
+		-> s_off on !relay_en;
+		-> s_overcurrent on I > Iset_mA: t := 0;
+	}
+
+	state s_overcurrent {
+		-> s_safe on I <= Iset_mA;
+		-> s_off on !relay_en;
+
+		-> violation on t > ((K*B) / ((I_ma / Iset_mA) - 1)) recover relay_en := 0;
+	}
+
+}

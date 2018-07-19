@@ -2,22 +2,22 @@ function Robotable;
 interface of Robotable {
 	//in here means that they're going from PLANT to CONTROLLER
 	//The inputs to the controller is the requested X, Y location, as well as the sensed X, Y location
-	in int16_t reqLocX;  
-	in int16_t reqLocY;	
-	in int16_t curLocX := 0; //0, 0 is the middle of the table
-	in int16_t curLocY := 0;
+	in int8_t reqLocX;  
+	in int8_t reqLocY;	
+	in int8_t curLocX := 0; //0, 0 is the middle of the table
+	in int8_t curLocY := 0;
 
 	//out here means that they're going from CONTROLLER to PLANT
 	//The outputs from the controller are the direction controllers for X and Y.
 	//These are limited to {-1, 0, 1}
-	out int16_t driveX := 0;
-	out int16_t driveY := 0;
+	out int8_t driveX := 0;
+	out int8_t driveY := 0;
 }
 
 policy clampSpeed of Robotable {
 	internals {
-		int16_t maxSpeed := 1;
-		int16_t minSpeed := -1;
+		int8_t maxSpeed := 1;
+		int8_t minSpeed := -1;
 	}
 
 	state s0 {	
@@ -31,10 +31,10 @@ policy clampSpeed of Robotable {
 
 policy stayOnTable of Robotable {
 	internals {
-		int16_t minX := -10;
-		int16_t maxX := 10;
-		int16_t minY := -10;
-		int16_t maxY := 10;
+		int8_t minX := -10;
+		int8_t maxX := 10;
+		int8_t minY := -10;
+		int8_t maxY := 10;
 	}
 
 	states {
