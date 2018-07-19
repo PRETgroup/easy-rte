@@ -161,13 +161,16 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 	if len(tr.Recover) > 0 {
 		solution := make([]stconverter.STExpression, 0)
 		for _, recov := range tr.Recover {
-			solution = append(solution, stconverter.STExpressionOperator{
-				Operator: stconverter.FindOp(":="),
-				Arguments: []stconverter.STExpression{
-					stconverter.STExpressionValue{Value: recov.Value},
-					stconverter.STExpressionValue{Value: recov.VarName},
-				},
-			})
+			//only add the manual solution in the appropriate enforcer (i.e. input changes go to input, output to output)
+			if enf.interfaceList.HasIONamed(inputPolicy, recov.VarName) {
+				solution = append(solution, stconverter.STExpressionOperator{
+					Operator: stconverter.FindOp(":="),
+					Arguments: []stconverter.STExpression{
+						stconverter.STExpressionValue{Value: recov.Value},
+						stconverter.STExpressionValue{Value: recov.VarName},
+					},
+				})
+			}
 		}
 		// solutionExpressions := make([]string, len(solution))
 		// for i, soln := range solution {

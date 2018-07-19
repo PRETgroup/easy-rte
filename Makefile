@@ -18,11 +18,11 @@ easy-rte-parser: rteparser/* rtedef/*
 $(PROJECT): example_$(PROJECT)
 
 #generate the C binary from the C sources
-example_$(PROJECT): example/$(PROJECT)/*.c example/$(PROJECT)/*.c
-	gcc example/$(PROJECT)/*.c -o example_$(PROJECT)
+example_$(PROJECT): example/$(PROJECT)/$(PROJECT)_main.c example/$(PROJECT)/F_$(PROJECT).c
+	gcc example/$(PROJECT)/$(PROJECT)_main.c example/$(PROJECT)/F_$(PROJECT).c -o example_$(PROJECT)
 
 #generate the C sources from the erte files
-example/$(PROJECT)/*.c: default example/$(PROJECT)/*.erte
+example/$(PROJECT)/F_$(PROJECT).c: default example/$(PROJECT)/$(PROJECT).erte
 	./easy-rte-parser -i example/$(PROJECT) -o example/$(PROJECT)
 	./easy-rte-c -i example/$(PROJECT) -o example/$(PROJECT)
 

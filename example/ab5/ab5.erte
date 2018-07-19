@@ -1,10 +1,10 @@
-function ab5Function;
-interface of ab5Function {
+function ab5;
+interface of ab5 {
 	in bool A;  //in here means that they're going from PLANT to CONTROLLER
 	out bool B; //out here means that they're going from CONTROLLER to PLANT
 }
 
-policy AB5 of ab5Function {
+policy AB5 of ab5 {
 	internals {
 		dtimer_t v;
 	}

@@ -17,11 +17,11 @@ policy IDMT of overcurrentDetector {
 		//0.1K and 13.5 B are multiplied together, and we want to output 
 		//final result in microseconds (to make discrete math easier). 
 		//So, we multiply B by 10, and K by 100,000
-		int32_t K = 10000;	
-		int32_t B = 135;	
-		int32_t Iset_mA = 1000;	//1A is nominal safe current
+		int32_t K := 10000;	
+		int32_t B := 135;	
+		int32_t Iset_mA := 1000;	//1A is nominal safe current
 
-		dtimer t;
+		dtimer_t t;
 	}
 
 	state s_off {
@@ -31,14 +31,14 @@ policy IDMT of overcurrentDetector {
 
 	state s_safe {	
 		-> s_off on !relay_en;
-		-> s_overcurrent on I > Iset_mA: t := 0;
+		-> s_overcurrent on I_mA > Iset_mA: t := 0;
 	}
 
 	state s_overcurrent {
-		-> s_safe on I <= Iset_mA;
+		-> s_safe on I_mA <= Iset_mA;
 		-> s_off on !relay_en;
 
-		-> violation on t > ((K*B) / ((I_ma / Iset_mA) - 1)) recover relay_en := 0;
+		-> violation on t > ((K*B) / ((I_mA / Iset_mA) - 1)) recover relay_en := 0;
 	}
 
 }
