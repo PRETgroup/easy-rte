@@ -15,11 +15,11 @@ TODO
 
 Download and install the latest version of [Go](https://golang.org/doc/install).
 
-Then, download this repository, and run `make`, which will generate the tools. 
+Then, download this repository, and run `make` or `make default`, which will generate the tools. 
 
-* The ab5 example can be generated using `make example_ab5`.
-* The robotable example can be generated using `make example_robotable`.
-
+* The ab5 example can be generated using `make c_enf PROJECT=ab5`.
+* The robotable example can be generated using `make c_enf PROJECT=robotable`.
+* You can also generate Verilog enforcers by using `make verilog_enf PROJECT=ab5`, for example. The Verilog enforcers are a little trickier to use, and require I/O connections to be provided to them. They do not embed a function call to the controller inside.
 ## Example of Use (AB5)
 
 Imagine a function which inputs boolean `A` and outputs boolean `B`. 
@@ -102,7 +102,7 @@ Then, we convert this policy XML file into an _enforcer_, which is written in C.
 
 Now, we can provide a `main.c` file which has our controller function in it, and then compile the project together.
 
-This entire example is provided in the `/example/ab5` folder of this repository, including an example top level file, and can be built from the root directory using `make example_ab5`.
+This entire example is provided in the `/example/ab5` folder of this repository, including an example top level file, and can be built from the root directory using `make c_enf PROJECT=ab5`.
 
 ## Example of Use (robotable)
 

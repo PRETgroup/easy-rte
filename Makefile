@@ -1,5 +1,11 @@
 default: easy-rte-c easy-rte-parser
 
+#convert C build instruction to C target
+c_enf: $(PROJECT)
+
+#convert verilog build instruction to verilog target
+verilog_enf: $(PROJECT)_V
+
 easy-rte-c: rtec/* rtedef/*
 	go get github.com/PRETgroup/goFB/goFB
 	go build -o easy-rte-c -i ./rtec/main
@@ -8,50 +14,27 @@ easy-rte-parser: rteparser/* rtedef/*
 	go get github.com/PRETgroup/goFB/goFB
 	go build -o easy-rte-parser -i ./rteparser/main
 
-example_ab5: example/ab5/ab5_main.c example/ab5/F_ab5Function.c
-	gcc example/ab5/ab5_main.c example/ab5/F_ab5Function.c -o example_ab5
+#convert $(PROJECT) into the C binary name
+$(PROJECT): example_$(PROJECT)
 
-#example/%/F_%.c: easy-rte-c easy-rte-parser example/%/%.erte
+#generate the C binary from the C sources
+example_$(PROJECT): example/$(PROJECT)/*.c example/$(PROJECT)/*.c
+	gcc example/$(PROJECT)/*.c -o example_$(PROJECT)
 
-example/ab5/F_ab5Function.c: easy-rte-c easy-rte-parser example/ab5/ab5.erte
-	./easy-rte-parser -i example/ab5 -o example/ab5
-	./easy-rte-c -i example/ab5 -o example/ab5
+#generate the C sources from the erte files
+example/$(PROJECT)/*.c: default example/$(PROJECT)/*.erte
+	./easy-rte-parser -i example/$(PROJECT) -o example/$(PROJECT)
+	./easy-rte-c -i example/$(PROJECT) -o example/$(PROJECT)
 
-example_ab5_verilog: example/ab5/enforcer_ab5.v
+#convert $(PROJECT)_V into the verilog names
+$(PROJECT)_V: example/$(PROJECT)/*.v
 
-example/ab5/enforcer_ab5.v: easy-rte-c easy-rte-parser example/ab5/ab5.erte
-	./easy-rte-parser -i example/ab5 -o example/ab5
-	./easy-rte-c -i example/ab5 -o example/ab5 -l=verilog
-
-example_ab5seconds: example/ab5seconds/ab5_main.c example/ab5seconds/F_ab5Function.c
-	gcc example/ab5seconds/ab5_main.c example/ab5seconds/F_ab5Function.c -o example_ab5
-
-example/ab5seconds/F_ab5Function.c: easy-rte-c easy-rte-parser example/ab5seconds/ab5seconds.erte
-	./easy-rte-parser -i example/ab5seconds -o example/ab5seconds
-	./easy-rte-c -i example/ab5seconds -o example/ab5seconds
-
-example_ab5seconds_verilog: example/ab5seconds/enforcer_ab5.v
-
-example/ab5seconds/enforcer_ab5.v: easy-rte-c easy-rte-parser example/ab5seconds/ab5seconds.erte
-	./easy-rte-parser -i example/ab5seconds -o example/ab5seconds
-	./easy-rte-c -i example/ab5seconds -o example/ab5seconds -l=verilog
-
-example_robotable: example/robotable/robotable_main.c example/robotable/F_Robotable.c
-	gcc example/robotable/robotable_main.c example/robotable/F_Robotable.c -o example_robotable
-
-example/robotable/F_Robotable.c: easy-rte-c easy-rte-parser example/robotable/robotable.erte
-	./easy-rte-parser -i example/robotable -o example/robotable
-	./easy-rte-c -i example/robotable -o example/robotable
-
-example_robotable_verilog: example/robotable/enforcer_robotable.v
-
-example/robotable/enforcer_robotable.v: easy-rte-c easy-rte-parser example/robotable/robotable.erte
-	./easy-rte-parser -i example/robotable -o example/robotable
-	./easy-rte-c -i example/robotable -o example/robotable -l=verilog
+example/$(PROJECT)/*.v: default example/$(PROJECT)/*.erte
+	./easy-rte-parser -i example/$(PROJECT) -o example/$(PROJECT)
+	./easy-rte-c -i example/$(PROJECT) -o example/$(PROJECT) -l=verilog
 
 clean:
 	rm -f easy-rte-c
 	rm -f easy-rte-parser
-	rm -f example_ab5
-	rm -f example_robotable
+	rm -f example_*
 	go get -u github.com/PRETgroup/goFB/goFB
