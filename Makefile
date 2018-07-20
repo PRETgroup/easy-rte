@@ -1,3 +1,5 @@
+.PHONY: default c_enf $(PROJECT)
+
 default: easy-rte-c easy-rte-parser
 
 #convert C build instruction to C target
@@ -22,7 +24,7 @@ example_$(PROJECT): example/$(PROJECT)/$(PROJECT)_main.c example/$(PROJECT)/F_$(
 	gcc example/$(PROJECT)/$(PROJECT)_main.c example/$(PROJECT)/F_$(PROJECT).c -o example_$(PROJECT)
 
 #generate the C sources from the erte files
-example/$(PROJECT)/F_$(PROJECT).c: default example/$(PROJECT)/$(PROJECT).erte
+example/$(PROJECT)/F_$(PROJECT).c: easy-rte-c easy-rte-parser example/$(PROJECT)/$(PROJECT).erte
 	./easy-rte-parser -i example/$(PROJECT) -o example/$(PROJECT)
 	./easy-rte-c -i example/$(PROJECT) -o example/$(PROJECT)
 
