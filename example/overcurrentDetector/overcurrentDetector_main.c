@@ -2,9 +2,11 @@
 #include <stdio.h>
 
 void print_data(uint64_t t, inputs_overcurrentDetector_t inputs, outputs_overcurrentDetector_t outputs) {
-    printf("Time: %llu ms\tCurrent:%6d mA\tRelay: %s\r\n", t/1000, inputs.I_mA, outputs.relay_en ? "enabled":"DISABLED");
+    printf("Time: %lu ms\tCurrent:%6d mA\tRelay: %s\r\n", t/1000, inputs.I_mA, outputs.relay_en ? "enabled":"DISABLED");
 }
 
+//remember to change template timer t++ to t+=1000 for the purposes of this demo
+//here, each tick represents 1 millisecond.
 int main() {
     enforcervars_overcurrentDetector_t enf;
     inputs_overcurrentDetector_t inputs;
