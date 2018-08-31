@@ -60,15 +60,15 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 		//select transition to advance state
 		case({{$block.Name}}_policy_{{$pol.Name}}_state)
 		{{range $sti, $st := $pol.States}}` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}: begin
-				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
+				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitionsForSource $st.Name}}{{/*
 				*/}}
-				if ({{$cond := getVerilogECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) begin
+				{{if $tri}}else {{end}}if ({{$cond := getVerilogECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) begin
 					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
 					{{$block.Name}}_policy_{{$pol.Name}}_state = ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$tr.Destination}};
 					//set expressions
 					{{range $exi, $ex := $tr.Expressions}}
 					{{$ex.VarName}} = {{$ex.Value}};{{end}}
-				end {{end}}{{end}}
+				end {{end}}
 			end
 			{{end}}
 		endcase

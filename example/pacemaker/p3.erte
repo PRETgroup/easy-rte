@@ -1,0 +1,26 @@
+//P3: AS or AP must be true within AEI after a ventricular event VS or VP.
+function p3;
+interface of p3 {
+	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
+	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p3 of p3 {
+	internals {
+		dtimer_t v;
+        uint16_t aeiTicks := 1000;
+	}
+
+	states {
+
+        
+		s0 {												
+			-> s1 on (VS || VP): v := 0;
+		}
+
+        s1 {
+            -> s0 on (AS || AP);
+            -> violation on (v > aeiTicks) recover AP := 1;
+        }
+	}
+}

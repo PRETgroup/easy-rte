@@ -1,0 +1,25 @@
+//P4: After a ventricular event, another ventricular event can happen only after URI.
+function p4;
+interface of p4 {
+	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
+	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p4 of p4 {
+	internals {
+		dtimer_t v;
+        uint16_t uriTicks := 1000;
+	}
+
+	states {
+
+		s0 {												
+			-> s1 on (VS || VP): v := 0;
+		}
+
+        s1 {
+            -> s0 on (v > uriTicks);
+            -> violation on (VP) recover VP := 0;
+        }
+	}
+}

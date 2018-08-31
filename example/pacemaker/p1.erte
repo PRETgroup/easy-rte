@@ -1,0 +1,20 @@
+//P1: AP and VP cannot happen simultaneously.
+function p1;
+interface of p1 {
+	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
+	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p1 of p1 {
+	internals {
+		dtimer_t v;
+	}
+
+	states {
+		s0 {												
+			-> violation on (AP and VP);
+
+			-> s0 on (!AP || !VP);
+		}
+	}
+}

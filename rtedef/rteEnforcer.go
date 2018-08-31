@@ -61,6 +61,19 @@ func (pol PEnforcerPolicy) GetNonViolationTransitions() []PSTTransition {
 	return nviolTrans
 }
 
+//GetNonViolationTransitionsForSource returns a slice of all transitions in this PEnforcerPolicy
+//which have a source as "src" and
+//have their destinations not set to "violation", ie. are not violation transitions
+func (pol PEnforcerPolicy) GetNonViolationTransitionsForSource(src string) []PSTTransition {
+	nviolTrans := make([]PSTTransition, 0)
+	for _, tr := range pol.Transitions {
+		if tr.Destination != "violation" && tr.Source == PState(src) {
+			nviolTrans = append(nviolTrans, tr)
+		}
+	}
+	return nviolTrans
+}
+
 //DoesExpressionInvolveTime returns true if a given expression uses time
 func (pol PEnforcerPolicy) DoesExpressionInvolveTime(expr stconverter.STExpression) bool {
 	op := expr.HasOperator()
