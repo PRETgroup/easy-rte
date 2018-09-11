@@ -1,0 +1,75 @@
+//network
+//
+//    -->-r1->-d1->-l1->--\                   /-->-l3->-d3->-----------
+//                         \sl_____________sr/
+//                         /                 \
+//    -------<-d4-<-l4-<--/                   \--<-l2-<-d2-<-r2-<----
+//
+
+function railwayBridge;
+interface of railwayBridge {
+	//in here means that they're going from PLANT to CONTROLLER
+	//The input to the controller is the sensed current in mA
+	in bool r1, r2;
+	in bool d1, d2, d3, d4;
+
+	//out here means that they're going from CONTROLLER to PLANT
+	//The output from the controller is the relay_en signal (i.e. '1' is 'engage')
+	out bool l1, l2, l3, l4;
+	out bool sl, sr;
+}
+
+policy MUTEX of railwayBridge {
+	
+
+	state s_wait {
+		-> s_1_3_start on r1;
+		-> s_2_4_start on r2;
+		-> violation on l1 recover l1 := false; 
+		-> violation on l2 recover l2 := false; 
+		-> violation on l3 recover l3 := false;
+		-> violation on l4 recover l4 := false;
+	}
+
+	state s_1_3_start {	
+		-> s_1_3_progress on d1;
+		-> violation on l2 recover l2 := false; 
+		-> violation on l4 recover l4 := false;
+	}
+
+	state s_1_3_progress {
+		-> s_1_3_leaving on d3;
+		-> violation on l1 recover l1 := false; 
+		-> violation on l2 recover l2 := false; 
+		-> violation on l4 recover l4 := false;
+	}
+
+	state s_1_3_leaving {
+		-> s_wait on !d1 and !d3;
+		-> violation on l1 recover l1 := false; 
+		-> violation on l2 recover l2 := false; 
+		-> violation on l3 recover l3 := false;
+		-> violation on l4 recover l4 := false;
+	}
+
+	state s_2_4_start {	
+		-> s_2_4_progress on d1;
+		-> violation on l1 recover l1 := false; 
+		-> violation on l3 recover l3 := false;
+	}
+
+	state s_2_4_progress {
+		-> s_2_4_leaving on d3;
+		-> violation on l1 recover l1 := false; 
+		-> violation on l2 recover l2 := false; 
+		-> violation on l3 recover l4 := false;
+	}
+
+	state s_2_4_leaving {
+		-> s_wait on !d1 and !d3;
+		-> violation on l1 recover l1 := false; 
+		-> violation on l2 recover l2 := false; 
+		-> violation on l3 recover l3 := false;
+		-> violation on l4 recover l4 := false;
+	}
+}
