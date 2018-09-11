@@ -1,0 +1,82 @@
+//network
+//                  N
+//                  |
+//                  |
+//           W------O------E
+//                  |
+//                  |
+//                  S
+
+function trafficLights;
+interface of trafficLights {
+	//in here means that they're going from PLANT to CONTROLLER
+	//The input to the controller is the sensed current in mA
+
+	//out here means that they're going from CONTROLLER to PLANT
+	//The output from the controller is the relay_en signal (i.e. '1' is 'engage')
+	out bool NS_G, NS_Y, NS_R;
+	out bool EW_G, EW_Y, EW_R;
+	//out bool NS_PED, EW_PED;
+}
+
+policy MUTEX of trafficLights {
+	internals {
+		dtimer_t v := 0;
+	}
+
+	state s_red {	
+		-> violation on NS_G and EW_G recover EW_G := 0;
+		-> violation on NS_G and EW_Y recover EW_Y := 0;
+		-> violation on EW_G and NS_Y recover NS_Y := 0;
+		-> s_fault on EW_Y and NS_Y;
+		-> violation on EW_Y recover EW_Y := 0;
+		-> violation on NS_Y recover NS_Y := 0;
+		
+		//lights must be red for 5 ticks
+		-> s_ew_g on EW_G and v > 5: v := 0;
+		-> s_ns_g on NS_G and v > 5: v := 0;
+
+		-> violation on EW_G and v <= 5 recover EW_G := 0;
+		-> violation on NS_G and v <= 5 recover NS_G := 0;
+	}
+
+	state s_ns_g {
+		-> violation on EW_G recover EW_G := 0;
+		-> violation on EW_Y recover EW_Y := 0;
+		-> violation on NS_Y recover NS_Y := 0;
+
+		//must be green for at least 50 ticks
+		-> violation on !NS_G and v < 50 recover NS_G := 1;
+		-> s_ns_y on !NS_G: v := 0;
+	}
+
+	state s_ns_y {
+		-> violation on EW_G recover EW_G := 0;
+		-> violation on EW_Y recover EW_Y := 0;
+		-> violation on NS_G recover NS_G := 0;
+
+		//must be yellow for at least 50 ticks
+		-> violation on !NS_Y and v < 50 recover NS_Y := 1;
+		-> s_red on !NS_Y: v := 0;
+	}
+
+	state s_ew_g {
+		-> violation on NS_G recover NS_G := 0;
+		-> violation on NS_Y recover NS_Y := 0;
+		-> violation on EW_Y recover EW_Y := 0;
+
+		//must be green for at least 50 ticks
+		-> violation on !EW_G and v < 50 recover EW_G := 1;
+		-> s_ew_y on !EW_G: v := 0;
+	}
+
+	state s_ew_y {
+		-> violation on NS_G recover NS_G := 0;
+		-> violation on NS_Y recover NS_Y := 0;
+		-> violation on EW_G recover EW_G := 0;
+
+		//must be yellow for at least 50 ticks
+		-> violation on !EW_Y and v < 50 recover EW_Y := 1;
+		-> s_red on !EW_Y: v := 0;
+	}
+}
