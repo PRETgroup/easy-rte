@@ -28,7 +28,7 @@ policy MUTEX of trafficLights {
 		-> violation on NS_G and EW_G recover EW_G := 0;
 		-> violation on NS_G and EW_Y recover EW_Y := 0;
 		-> violation on EW_G and NS_Y recover NS_Y := 0;
-		-> s_fault on EW_Y and NS_Y;
+		-> s_fault on EW_Y and NS_Y: v := 0;
 		-> violation on EW_Y recover EW_Y := 0;
 		-> violation on NS_Y recover NS_Y := 0;
 		
@@ -78,5 +78,30 @@ policy MUTEX of trafficLights {
 		//must be yellow for at least 50 ticks
 		-> violation on !EW_Y and v < 50 recover EW_Y := 1;
 		-> s_red on !EW_Y: v := 0;
+	}
+
+	state s_fault {
+		-> violation on NS_G recover NS_G := 0;
+		-> violation on EW_G recover EW_G := 0;
+		-> violation on NS_R recover NS_R := 0;
+		-> violation on EW_R recover EW_R := 0;
+
+		//must be yellow for exactly 10 ticks
+		-> violation on !NS_Y and v < 10 recover NS_Y := 1;
+		-> violation on !EW_Y and v < 10 recover EW_Y := 1;
+
+		-> s_fault_off on v = 10: v := 0;
+	}
+
+	state s_fault_off {
+		//no lights for 10 ticks
+		-> violation on NS_G recover NS_G := 0;
+		-> violation on EW_G recover EW_G := 0;
+		-> violation on NS_R recover NS_R := 0;
+		-> violation on EW_R recover EW_R := 0;
+		-> violation on NS_Y recover NS_Y := 0;
+		-> violation on EW_Y recover EW_Y := 0;
+
+		-> s_red on v = 10;
 	}
 }

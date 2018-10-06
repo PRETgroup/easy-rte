@@ -25,10 +25,10 @@ policy MUTEX of railwayBridge {
 	state s_wait {
 		-> s_1_3_aligntracks on r1;
 		-> s_2_4_aligntracks on r2;
-		-> violation on l1 recover l1 := false; 
-		-> violation on l2 recover l2 := false; 
-		-> violation on l3 recover l3 := false;
-		-> violation on l4 recover l4 := false;
+		-> violation on l1 recover l1 := 0; 
+		-> violation on l2 recover l2 := 0; 
+		-> violation on l3 recover l3 := 0;
+		-> violation on l4 recover l4 := 0;
 	}
 
 	state s_1_3_aligntracks {
@@ -36,26 +36,26 @@ policy MUTEX of railwayBridge {
 	}
 
 	state s_1_3_start {	
-		-> violation on !sl recover sl := true;
-		-> violation on l2 recover l2 := false; 
-		-> violation on l4 recover l4 := false;
+		-> violation on !sl recover sl := 1;
+		-> violation on l2 recover l2 := 0; 
+		-> violation on l4 recover l4 := 0;
 		-> s_1_3_progress on d1;
 	}
 
 	state s_1_3_progress {
-		-> violation on !sl recover sl := true;
-		-> violation on l1 recover l1 := false; 
-		-> violation on l2 recover l2 := false; 
-		-> violation on l4 recover l4 := false;
+		-> violation on !sl recover sl := 1;
+		-> violation on l1 recover l1 := 0; 
+		-> violation on l2 recover l2 := 0; 
+		-> violation on l4 recover l4 := 0;
 		-> s_1_3_leaving on d3;
 	}
 
 	state s_1_3_leaving {
-		-> violation on !sl recover sl := true;
-		-> violation on l1 recover l1 := false; 
-		-> violation on l2 recover l2 := false; 
-		-> violation on l3 recover l3 := false;
-		-> violation on l4 recover l4 := false;
+		-> violation on !sl recover sl := 1;
+		-> violation on l1 recover l1 := 0; 
+		-> violation on l2 recover l2 := 0; 
+		-> violation on l3 recover l3 := 0;
+		-> violation on l4 recover l4 := 0;
 		-> s_wait on !d1 and !d3;
 	}
 
@@ -64,26 +64,26 @@ policy MUTEX of railwayBridge {
 	}
 
 	state s_2_4_start {	
-		-> violation on sl recover sl := false;
-		-> violation on l1 recover l1 := false; 
-		-> violation on l3 recover l3 := false;
+		-> violation on sl recover sl := 0;
+		-> violation on l1 recover l1 := 0; 
+		-> violation on l3 recover l3 := 0;
 		-> s_2_4_progress on d1;
 	}
 
 	state s_2_4_progress {
-		-> violation on sl recover sl := false;
-		-> violation on l1 recover l1 := false; 
-		-> violation on l2 recover l2 := false; 
-		-> violation on l3 recover l4 := false;
+		-> violation on sl recover sl := 0;
+		-> violation on l1 recover l1 := 0; 
+		-> violation on l2 recover l2 := 0; 
+		-> violation on l3 recover l4 := 0;
 		-> s_2_4_leaving on d3;
 	}
 
 	state s_2_4_leaving {
-		-> violation on sl recover sl := false;
-		-> violation on l1 recover l1 := false; 
-		-> violation on l2 recover l2 := false; 
-		-> violation on l3 recover l3 := false;
-		-> violation on l4 recover l4 := false;
+		-> violation on sl recover sl := 0;
+		-> violation on l1 recover l1 := 0; 
+		-> violation on l2 recover l2 := 0; 
+		-> violation on l3 recover l3 := 0;
+		-> violation on l4 recover l4 := 0;
 		-> s_wait on !d1 and !d3;
 	}
 }
