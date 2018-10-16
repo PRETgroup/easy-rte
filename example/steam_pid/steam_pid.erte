@@ -1,0 +1,12 @@
+function steam_pid;
+interface of steam_pid {
+	in int32_t temp;  //in here means that they're going from PLANT to CONTROLLER
+	out int32_t power; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p1 of steam_pid {
+	internals {
+		dtimer_t v;
+	}
+
+}
