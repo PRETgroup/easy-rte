@@ -1,0 +1,17 @@
+1. accepting states are urgent, as we don't care if time passes in them
+2. non-accepting states are normal, and they must have invariants
+
+longest trace of urgent states * wcrt to get response time
+
+
+
+1. environment has three states
+ transition 1 do inputs
+ transition 2 run enforcer
+ transition 3 run policy
+
+2. Compile to policy monitor and enforcer
+ enforcer clocks replaced with (clock + 1)
+
+3. Ensure violation state never reached.
+ A[](not vio)
