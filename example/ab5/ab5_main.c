@@ -1,5 +1,6 @@
 #include "F_ab5.h"
 #include <stdio.h>
+#include <stdint.h>
 
 void print_data(uint32_t count, inputs_ab5_t inputs, outputs_ab5_t outputs) {
     printf("Tick %7d: A:%d, B:%d\r\n", count, inputs.A, outputs.B);

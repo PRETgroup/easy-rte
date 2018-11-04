@@ -104,6 +104,16 @@ Now, we can provide a `main.c` file which has our controller function in it, and
 
 This entire example is provided in the `/example/ab5` folder of this repository, including an example top level file, and can be built from the root directory using `make c_enf PROJECT=ab5`.
 
+### Using CBMC on AB5
+
+Once you have compiled AB5 using `make c_enf PROJECT=ab5`, you can navigate to `/example/ab5` directory.
+
+There, you can run `cbmc ab5_main_cbmc.c F_ab5.c`, and it will tell you `VERIFICATION SUCCESSFUL`, i.e. the policy can not enter a violation state.
+
+Note that this uses its own `_cbmc` main file which removes example looping and adds sources of nondeterminism to the inputs and internal state.
+
+See http://www.cprover.org/cprover-manual/modeling-nondet.html for an explanation on this.
+
 ## Example of Use (robotable)
 
 Consider a 2-d flat surface (a table) with -10 to +10 in each dimension.

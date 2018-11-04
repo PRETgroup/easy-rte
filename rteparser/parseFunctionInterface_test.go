@@ -46,11 +46,13 @@ var interfaceTests = []ParseTest{
 		Output: []rtedef.EnforcedFunction{
 			rtedef.EnforcedFunction{
 				Name: "testBlock",
-				Inputs: []rtedef.Variable{
-					rtedef.Variable{Name: "inEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
-				},
-				Outputs: []rtedef.Variable{
-					rtedef.Variable{Name: "outEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+				InterfaceList: rtedef.InterfaceList{
+					InputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "inEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+					},
+					OutputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "outEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+					},
 				},
 				Policies: []rtedef.Policy(nil)},
 		},
@@ -67,13 +69,17 @@ var interfaceTests = []ParseTest{
 		Output: []rtedef.EnforcedFunction{
 			rtedef.EnforcedFunction{
 				Name: "testBlock",
-				Inputs: []rtedef.Variable{
-					rtedef.Variable{Name: "inEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
-					rtedef.Variable{Name: "inData", Type: "bool", ArraySize: "3", InitialValue: "", Comment: ""},
+				InterfaceList: rtedef.InterfaceList{
+					InputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "inEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+						rtedef.Variable{Name: "inData", Type: "bool", ArraySize: "3", InitialValue: "", Comment: ""},
+					},
+					OutputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "outEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+					},
 				},
-				Outputs: []rtedef.Variable{
-					rtedef.Variable{Name: "outEvent", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
-				}, Policies: []rtedef.Policy(nil)},
+				Policies: []rtedef.Policy(nil),
+			},
 		},
 		Err: nil,
 	},
@@ -98,13 +104,16 @@ var interfaceTests = []ParseTest{
 		Output: []rtedef.EnforcedFunction{
 			rtedef.EnforcedFunction{
 				Name: "testBlock",
-				Inputs: []rtedef.Variable{
-					rtedef.Variable{Name: "inEvent", Type: "int8_t", ArraySize: "", InitialValue: "", Comment: ""},
-					rtedef.Variable{Name: "inData", Type: "bool", ArraySize: "3", InitialValue: "[0,1,0]", Comment: ""},
+				InterfaceList: rtedef.InterfaceList{
+					InputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "inEvent", Type: "int8_t", ArraySize: "", InitialValue: "", Comment: ""},
+						rtedef.Variable{Name: "inData", Type: "bool", ArraySize: "3", InitialValue: "[0,1,0]", Comment: ""},
+					},
+					OutputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "outEvent", Type: "char", ArraySize: "", InitialValue: "", Comment: ""},
+					},
 				},
-				Outputs: []rtedef.Variable{
-					rtedef.Variable{Name: "outEvent", Type: "char", ArraySize: "", InitialValue: "", Comment: ""},
-				}, Policies: []rtedef.Policy(nil)}},
+				Policies: []rtedef.Policy(nil)}},
 		Err: nil,
 	},
 	{

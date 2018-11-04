@@ -38,6 +38,8 @@ const (
 
 	pRecover = "recover"
 
+	pConstant = "constant"
+
 	pInternal   = "internal"
 	pInternals  = "internals"
 	pState      = "state"

@@ -31,7 +31,7 @@ var efbArchitectureTests = []ParseTest{
 				}
 				policy AEI of AEIPolicy {
 					internals {
-						dtimer tAEI; //DTIMER increases in DISCRETE TIME continuously
+						dtimer_t tAEI; //DTIMER increases in DISCRETE TIME continuously
 					}
 				
 					//P3: AS or AP must be true within AEI after a ventricular event VS or VP.
@@ -51,20 +51,22 @@ var efbArchitectureTests = []ParseTest{
 		Output: []rtedef.EnforcedFunction{
 			rtedef.EnforcedFunction{
 				Name: "AEIPolicy",
-				Inputs: []rtedef.Variable{
-					rtedef.Variable{Name: "AS", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
-					rtedef.Variable{Name: "VS", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
-					rtedef.Variable{Name: "AEI_ns", Type: "uint64_t", ArraySize: "", InitialValue: "900000000", Comment: ""},
-				},
-				Outputs: []rtedef.Variable{
-					rtedef.Variable{Name: "AP", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
-					rtedef.Variable{Name: "VP", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+				InterfaceList: rtedef.InterfaceList{
+					InputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "AS", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+						rtedef.Variable{Name: "VS", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+						rtedef.Variable{Name: "AEI_ns", Type: "uint64_t", ArraySize: "", InitialValue: "900000000", Comment: ""},
+					},
+					OutputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "AP", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+						rtedef.Variable{Name: "VP", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+					},
 				},
 				Policies: []rtedef.Policy{
 					rtedef.Policy{
 						Name: "AEI",
 						InternalVars: []rtedef.Variable{
-							rtedef.Variable{Name: "tAEI", Type: "DTIMER", ArraySize: "", InitialValue: "", Comment: ""},
+							rtedef.Variable{Name: "tAEI", Type: "dtimer_t", ArraySize: "", InitialValue: "", Comment: ""},
 						},
 						States: []rtedef.PState{"s1", "s2"},
 						Transitions: []rtedef.PTransition{
@@ -87,7 +89,7 @@ var efbArchitectureTests = []ParseTest{
 			
 			policy AB5 of AB5Policy {
 				internals {
-					dtimer v;
+					dtimer_t v;
 				}
 			
 				states {
@@ -107,17 +109,19 @@ var efbArchitectureTests = []ParseTest{
 		Output: []rtedef.EnforcedFunction{
 			rtedef.EnforcedFunction{
 				Name: "AB5Policy",
-				Inputs: []rtedef.Variable{
-					rtedef.Variable{Name: "A", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
-				},
-				Outputs: []rtedef.Variable{
-					rtedef.Variable{Name: "B", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+				InterfaceList: rtedef.InterfaceList{
+					InputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "A", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+					},
+					OutputVars: []rtedef.Variable{
+						rtedef.Variable{Name: "B", Type: "bool", ArraySize: "", InitialValue: "", Comment: ""},
+					},
 				},
 				Policies: []rtedef.Policy{
 					rtedef.Policy{
 						Name: "AB5",
 						InternalVars: []rtedef.Variable{
-							rtedef.Variable{Name: "v", Type: "DTIMER", ArraySize: "", InitialValue: "", Comment: ""},
+							rtedef.Variable{Name: "v", Type: "dtimer_t", ArraySize: "", InitialValue: "", Comment: ""},
 						},
 						States: []rtedef.PState{"s0", "s1"},
 						Transitions: []rtedef.PTransition{

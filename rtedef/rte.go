@@ -43,6 +43,7 @@ func (il InterfaceList) HasIONamed(input bool, s string) bool {
 type Variable struct {
 	Name         string `xml:"Name,attr"`
 	Type         string `xml:"Type,attr"`
+	Constant     bool   `xml:"Constant,attr"`
 	ArraySize    string `xml:"ArraySize,attr,omitempty"`
 	InitialValue string `xml:"InitialValue,attr,omitempty"`
 	Comment      string `xml:"Comment,attr"`
@@ -141,9 +142,9 @@ func (f *EnforcedFunction) AddPolicy(name string) {
 }
 
 //AddDataInternals adds data internals to a efb, and adds the InternalVars section if it is nil
-func (efb *Policy) AddDataInternals(intNames []string, typ string, size string, initialValue string) *Policy {
+func (efb *Policy) AddDataInternals(intNames []string, typ string, isConstant bool, size string, initialValue string) *Policy {
 	for _, iname := range intNames {
-		efb.InternalVars = append(efb.InternalVars, Variable{Name: iname, Type: typ, ArraySize: size, InitialValue: initialValue})
+		efb.InternalVars = append(efb.InternalVars, Variable{Name: iname, Type: typ, Constant: isConstant, ArraySize: size, InitialValue: initialValue})
 	}
 	return efb
 }

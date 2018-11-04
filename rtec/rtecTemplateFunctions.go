@@ -69,10 +69,10 @@ func getCECCTransitionCondition(function rtedef.EnforcedFunction, trans string) 
 		//check to see if it is a policy internal var
 		for i := 0; i < len(function.Policies); i++ {
 			for _, Var := range function.Policies[i].InternalVars {
-				if Var.Name == in {
-					return "me->" + in
-				}
-				if Var.Name+"_i" == in {
+				if Var.Name == in || Var.Name+"_i" == in {
+					if Var.Constant {
+						return "CONST_" + function.Policies[i].Name + "_" + in
+					}
 					return "me->" + in
 				}
 			}

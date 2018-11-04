@@ -1,4 +1,4 @@
-.PHONY: default c_enf $(PROJECT)
+.PHONY: default c_enf verilog_enf $(PROJECT)
 
 default: easy-rte-c easy-rte-parser
 

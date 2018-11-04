@@ -68,7 +68,7 @@ void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Nam
 	//select transition to advance state
 	switch(me->_policy_{{$pol.Name}}_state) {
 		{{range $sti, $st := $pol.States}}case POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}:
-			{{range $tri, $tr := $pfbEnf.OutputPolicy.GetNonViolationTransitions}}{{if eq $tr.Source $st.Name}}{{/*
+			{{range $tri, $tr := $pfbEnf.OutputPolicy.Transitions}}{{if eq $tr.Source $st.Name}}{{/*
 			*/}}
 			if({{$cond := getCECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) {
 				//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
@@ -76,12 +76,16 @@ void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Nam
 				//set expressions
 				{{range $exi, $ex := $tr.Expressions}}
 				me->{{$ex.VarName}} = {{$ex.Value}};{{end}}
+				break;
 			} {{end}}{{end}}
 			
 			break;
 
 		{{end}}
 	}
+
+	//ensure we are safe
+	assert(me->_policy_{{$pol.Name}}_state != POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
 }
 {{end}}
 //OUTPUT POLICY {{$pol.Name}} END
@@ -94,6 +98,7 @@ void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Nam
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
 //the dtimer_t type
 typedef uint64_t dtimer_t;
@@ -101,7 +106,8 @@ typedef uint64_t dtimer_t;
 //For each policy, we need an enum type for the state machine
 {{range $polI, $pol := $block.Policies}}
 enum {{$block.Name}}_policy_{{$pol.Name}}_states { {{if len $pol.States}}{{range $index, $state := $pol.States}}{{if $index}}, {{end}}
-	POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$state}}{{end}}{{else}}POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_unknown{{end}} 
+	POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$state}}{{end}}{{else}}POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_unknown{{end}},
+	POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation 
 };
 {{end}}
 
@@ -121,10 +127,15 @@ typedef struct {
 typedef struct {
 	{{range $polI, $pol := $block.Policies}}enum {{$block.Name}}_policy_{{$pol.Name}}_states _policy_{{$pol.Name}}_state;
 	{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{$var.Type}} {{$var.Name}}{{if $var.ArraySize}}[{{$var.ArraySize}}]{{end}};
-	{{end}}{{end}}
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}{{$var.Type}} {{$var.Name}}{{if $var.ArraySize}}[{{$var.ArraySize}}]{{end}}{{end}}{{end}};
+	{{end}}
 	{{end}}
 } enforcervars_{{$block.Name}}_t;
+
+{{range $polI, $pol := $block.Policies -}}
+{{range $varI, $var := $pol.InternalVars -}}
+{{if $var.Constant}}#define CONST_{{$pol.Name}}_{{$var.Name}} {{$var.InitialValue}}{{end}}
+{{end}}{{end}}
 
 //This function is provided in "F_{{$block.Name}}.c"
 //It sets up the variable structures to their initial values
@@ -169,10 +180,10 @@ void {{$block.Name}}_init_all_vars(enforcervars_{{$block.Name}}_t* me, inputs_{{
 	{{if $block.Policies}}{{range $polI, $pol := $block.Policies}}
 	me->_policy_{{$pol.Name}}_state = {{if $pol.States}}POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{(index $pol.States 0).Name}}{{else}}POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_unknown{{end}};
 	{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//input policy internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}
 	{{$initialArray := $var.GetInitialArray}}{{if $initialArray}}{{range $initialIndex, $initialValue := $initialArray}}me->{{$var.Name}}[{{$initialIndex}}] = {{$initialValue}};
 	{{end}}{{else}}me->{{$var.Name}} = {{if $var.InitialValue}}{{$var.InitialValue}}{{else}}0{{end}};
-	{{end}}{{end}}{{end}}
+	{{end}}{{end}}{{end}}{{end}}
 	{{end}}{{end}}
 }
 

@@ -69,6 +69,13 @@ func (t *pParse) parsePInternal(fbIndex int) *ParseError {
 	//the beginning of this is very similar to parseFBio, but different enough that it should be another function
 	fb := &t.funcs[fbIndex]
 
+	//check if it is constant
+	isConstant := false
+	if t.peek() == pConstant {
+		isConstant = true
+		t.pop()
+	}
+
 	//next s is type
 	typ := t.pop()
 
@@ -147,7 +154,7 @@ func (t *pParse) parsePInternal(fbIndex int) *ParseError {
 
 	//while this can return an error,
 	//the only permissible error is "wrong block type" and we have already ensured we are operating on a basicFB
-	fb.Policies[len(fb.Policies)-1].AddDataInternals(intNames, typ, size, initialValue)
+	fb.Policies[len(fb.Policies)-1].AddDataInternals(intNames, typ, isConstant, size, initialValue)
 
 	return nil
 }

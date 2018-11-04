@@ -76,15 +76,49 @@ var basicTests = []ParseTest{
 		Name: "empty interface 1",
 		Input: `function testBlock;
 				interface of testBlock {}`,
-		Output: []rtedef.EnforcedFunction{rtedef.EnforcedFunction{Name: "testBlock", Inputs: []rtedef.Variable(nil), Outputs: []rtedef.Variable(nil), Policies: []rtedef.Policy(nil)}},
-		Err:    nil,
+		Output: []rtedef.EnforcedFunction{
+			rtedef.EnforcedFunction{
+				Name: "testBlock",
+				InterfaceList: rtedef.InterfaceList{
+					InputVars:  []rtedef.Variable(nil),
+					OutputVars: []rtedef.Variable(nil),
+				},
+				Policies: []rtedef.Policy(nil),
+			},
+		},
+		Err: nil,
 	},
 	{
 		Name: "empty interfaces 1",
 		Input: `function testBlock1, testBlock2, testBlock3;
 				interface of testBlock2 {}`,
-		Output: []rtedef.EnforcedFunction{rtedef.EnforcedFunction{Name: "testBlock1", Inputs: []rtedef.Variable(nil), Outputs: []rtedef.Variable(nil), Policies: []rtedef.Policy(nil)}, rtedef.EnforcedFunction{Name: "testBlock2", Inputs: []rtedef.Variable(nil), Outputs: []rtedef.Variable(nil), Policies: []rtedef.Policy(nil)}, rtedef.EnforcedFunction{Name: "testBlock3", Inputs: []rtedef.Variable(nil), Outputs: []rtedef.Variable(nil), Policies: []rtedef.Policy(nil)}},
-		Err:    nil,
+		Output: []rtedef.EnforcedFunction{
+			rtedef.EnforcedFunction{
+				Name: "testBlock1",
+				InterfaceList: rtedef.InterfaceList{
+					InputVars:  []rtedef.Variable(nil),
+					OutputVars: []rtedef.Variable(nil),
+				},
+				Policies: []rtedef.Policy(nil),
+			},
+			rtedef.EnforcedFunction{
+				Name: "testBlock2",
+				InterfaceList: rtedef.InterfaceList{
+					InputVars:  []rtedef.Variable(nil),
+					OutputVars: []rtedef.Variable(nil),
+				},
+				Policies: []rtedef.Policy(nil),
+			},
+			rtedef.EnforcedFunction{
+				Name: "testBlock3",
+				InterfaceList: rtedef.InterfaceList{
+					InputVars:  []rtedef.Variable(nil),
+					OutputVars: []rtedef.Variable(nil),
+				},
+				Policies: []rtedef.Policy(nil),
+			},
+		},
+		Err: nil,
 	},
 }
 
