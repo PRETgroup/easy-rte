@@ -11,18 +11,18 @@ int main() {
     inputs_ab5_t inputs;
     outputs_ab5_t outputs;
     int count = 0;
-    
+
     //set values to known state
     ab5_init_all_vars(&enf, &inputs, &outputs);
    
     //introduce nondeterminism
     //a nondet_xxxxx function name tells cbmc that it could be anything, but must be unique
+    //randomise inputs
     inputs.A = nondet_1();
-    enf.v = nondet_2();
 
-    //sanity check: if state can be anything, it could be a violation state
-    //uncomment this to cause a verification failure
-    //enf._policy_AB5_state = nondet_uint64sd_t(); 
+    //randomise enforcer state, i.e. clock values and position (excepting violation state)
+    enf.v = nondet_2();
+    enf._policy_AB5_state = nondet_3() % 2; //Here, "% 2" ensures that it is in any state _other_ than the violation state
 
     //run the enforcer (i.e. tell CBMC to check this out)
     ab5_run_via_enforcer(&enf, &inputs, &outputs);
@@ -32,6 +32,8 @@ int main() {
 }
 
 void ab5_run(inputs_ab5_t *inputs, outputs_ab5_t *outputs) {
-    //do nothing
+    //randomise controller
+
+    outputs->B = nondet_4(); 
 }
 
