@@ -16,8 +16,8 @@ interface of Robotable {
 
 policy clampSpeed of Robotable {
 	internals {
-		int8_t maxSpeed := 1;
-		int8_t minSpeed := -1;
+		constant int8_t maxSpeed := 1;
+		constant int8_t minSpeed := -1;
 	}
 
 	state s0 {	
@@ -31,10 +31,10 @@ policy clampSpeed of Robotable {
 
 policy stayOnTable of Robotable {
 	internals {
-		int8_t minX := -10;
-		int8_t maxX := 10;
-		int8_t minY := -10;
-		int8_t maxY := 10;
+		constant int8_t minX := -10;
+		constant int8_t maxX := 10;
+		constant int8_t minY := -10;
+		constant int8_t maxY := 10;
 	}
 
 	states {

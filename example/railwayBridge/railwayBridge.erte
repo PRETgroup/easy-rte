@@ -1,4 +1,8 @@
 //network
+// r == request(true == request)
+// d == sensor (true == present)
+// l == light  (true == on)
+// s == switch (true == N)
 //
 //    -->-r1->-d1->-l1->--\                   /-->-l3->-d3->-----------
 //                         \sl_____________sl/
@@ -9,12 +13,10 @@
 function railwayBridge;
 interface of railwayBridge {
 	//in here means that they're going from PLANT to CONTROLLER
-	//The input to the controller is the sensed current in mA
 	in bool r1, r2;
 	in bool d1, d2, d3, d4;
 
 	//out here means that they're going from CONTROLLER to PLANT
-	//The output from the controller is the relay_en signal (i.e. '1' is 'engage')
 	out bool l1, l2, l3, l4;
 	out bool sl;
 }
@@ -74,7 +76,7 @@ policy MUTEX of railwayBridge {
 		-> violation on sl recover sl := 0;
 		-> violation on l1 recover l1 := 0; 
 		-> violation on l2 recover l2 := 0; 
-		-> violation on l3 recover l4 := 0;
+		-> violation on l3 recover l3 := 0;
 		-> s_2_4_leaving on d3;
 	}
 
