@@ -16,6 +16,12 @@ easy-rte-parser: rteparser/* rtedef/*
 	go get github.com/PRETgroup/goFB/goFB
 	go build -o easy-rte-parser -i ./rteparser/main
 
+run_cbmc: default c_enf
+	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
+
+run_ebmc: default verilog_enf
+	ebmc example/$(PROJECT)/ebmc_F_$(PROJECT).sv
+
 #convert $(PROJECT) into the C binary name
 $(PROJECT): example_$(PROJECT)
 

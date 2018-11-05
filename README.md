@@ -112,6 +112,12 @@ This entire example is provided in the `/example/ab5` folder of this repository,
 
 ### Using CBMC on AB5
 
+Remember to install CBMC with either `sudo apt install cbmc` or from https://www.cprover.org/cbmc/
+
+Short command: you can run CBMC automatically on build with the command `make c_enf run_cbmc PROJECT=ab5`.
+
+For more details:
+
 Once you have compiled AB5 using `make c_enf PROJECT=ab5`, you can navigate to `/example/ab5` directory.
 
 You will see that a file `cbmc_main_ab5.c` is automatically generated for you. You may open this file to inspect it.
@@ -126,6 +132,12 @@ In the top comments of the file it will describe the CBMC command required to ru
 Once run, this will tell you `VERIFICATION SUCCESSFUL`, i.e. this policy can not enter a violation state.
 
 ### Using EBMC on AB5
+
+Remember to install EBMC from https://www.cprover.org/ebmc/
+
+Short command: You can run EBMC automatically on build of a Verilog Enforcer with the command `make verilog_enf run_ebmc PROJECT=ab5`.
+
+For more details:
 
 You can also compile ab5 to Verilog by using `make verilog_enf PROJECT=ab5`.
 
