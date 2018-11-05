@@ -7,6 +7,8 @@ While the original implementation was restricted to simple _boolean_ arguments o
 with SCCharts, this project presents a more generalised any-type enforcement system, which can be used with any C project. 
 _easy-rte_ was ported from [goFB](https://github.com/PRETgroup/goFB), which implemented the semantics in this way, but restricted them for use with IEC 61499 function blocks.
 
+We ensure we are correct via proofs available (in a paper yet to be published), and via the use of the CBMC and EBMC model checkers.
+
 ## What is Runtime Enforcement?
 
 TODO
@@ -20,6 +22,10 @@ Then, download this repository, and run `make` or `make default`, which will gen
 * The ab5 example can be generated using `make c_enf PROJECT=ab5`.
 * The robotable example can be generated using `make c_enf PROJECT=robotable`.
 * You can also generate Verilog enforcers by using `make verilog_enf PROJECT=ab5`, for example. The Verilog enforcers are a little trickier to use, and require I/O connections to be provided to them. They do not embed a function call to the controller inside.
+* If you are interested in using the model checkers:
+  * Obtain CBMC (C model checker) by running `sudo apt install cbmc`. Website here: https://www.cprover.org/cbmc/
+  * Obtain EBMC (Verilog model checker) by going to website https://www.cprover.org/ebmc/
+
 ## Example of Use (AB5)
 
 Imagine a function which inputs boolean `A` and outputs boolean `B`. 
@@ -118,6 +124,15 @@ See http://www.cprover.org/cprover-manual/modeling-nondet.html for an explanatio
 In the top comments of the file it will describe the cbmc command required to run it. In the case of ab5, this is `$ cbmc cbmc_main_ab5.c F_ab5.c`. 
 
 Once run, this will tell you `VERIFICATION SUCCESSFUL`, i.e. this policy can not enter a violation state.
+
+### Using EBMC on AB5
+
+You can also compile ab5 to Verilog by using `make verilog_enf PROJECT=ab5`.
+
+Now, if you navigate to the `/example/ab5` directory you will see there is an `ab5.v` file.
+
+If you open up the generated file, you will see in the top comments an EMBC command that can be used to run the EBMC
+model checker. For AB5, this is `$ ebmc F_ab5.v -p "ab5_policy_AB5_state != 2"`.
 
 ## Example of Use (robotable)
 

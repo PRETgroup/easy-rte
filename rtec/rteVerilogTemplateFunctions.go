@@ -31,13 +31,13 @@ func getVerilogWidthArrayForType(ctype string) string {
 	case "char":
 		verilogType = "[7:0]"
 	case "uint8_t":
-		verilogType = "unsigned [7:0]"
+		verilogType = "[7:0]"
 	case "uint16_t":
-		verilogType = "unsigned [15:0]"
+		verilogType = "[15:0]"
 	case "uint32_t":
-		verilogType = "unsigned [31:0]"
+		verilogType = "[31:0]"
 	case "uint64_t":
-		verilogType = "unsigned [63:0]"
+		verilogType = "[63:0]"
 	case "int8_t":
 		verilogType = "signed [7:0]"
 	case "int16_t":
@@ -51,7 +51,7 @@ func getVerilogWidthArrayForType(ctype string) string {
 	case "double":
 		panic("Double type not allowed in conversion")
 	case "dtimer_t":
-		verilogType = "unsigned [63:0]"
+		verilogType = "[63:0]"
 	case "rtimer_t":
 		panic("rtimer type not allowed in conversion")
 	default:
@@ -99,4 +99,8 @@ func ceilLog2(x uint64) int {
 	}
 
 	return y
+}
+
+func add(a, b int) int {
+	return a + b
 }
