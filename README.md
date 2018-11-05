@@ -116,12 +116,12 @@ Once you have compiled AB5 using `make c_enf PROJECT=ab5`, you can navigate to `
 
 You will see that a file `cbmc_main_ab5.c` is automatically generated for you. You may open this file to inspect it.
 
-This file is a cbmc-ready main file for you to ensure that entering a violation state of a policy is impossible (i.e. your recover transitions were correctly specified). 
+This file is a CBMC-ready main file for you to ensure that entering a violation state of a policy is impossible (i.e. your recover transitions were correctly specified). 
 It makes all the environmental inputs, the controller outputs, and the enforcer internal state and data vars _nondeterministic_.
 This ensures that _all operating cases_ are checked.
 See http://www.cprover.org/cprover-manual/modeling-nondet.html for an explanation.
 
-In the top comments of the file it will describe the cbmc command required to run it. In the case of ab5, this is `$ cbmc cbmc_main_ab5.c F_ab5.c`. 
+In the top comments of the file it will describe the CBMC command required to run it. In the case of ab5, this is `$ cbmc cbmc_main_ab5.c F_ab5.c`. 
 
 Once run, this will tell you `VERIFICATION SUCCESSFUL`, i.e. this policy can not enter a violation state.
 
@@ -129,10 +129,13 @@ Once run, this will tell you `VERIFICATION SUCCESSFUL`, i.e. this policy can not
 
 You can also compile ab5 to Verilog by using `make verilog_enf PROJECT=ab5`.
 
-Now, if you navigate to the `/example/ab5` directory you will see there is an `ab5.v` file.
+Now, if you navigate to the `/example/ab5` directory you will see there is an `F_ab5.v` file as well as a `ebmc_F_ab5.sv` file.
 
-If you open up the generated file, you will see in the top comments an EMBC command that can be used to run the EBMC
-model checker. For AB5, this is `$ ebmc F_ab5.v -p "ab5_policy_AB5_state != 2"`.
+We are interested in verifying the `embc_F_ab5.sv` file, as this exposes sources of nondeterminism to the model checker (just as we did earlier with the CBMC top level file for the C compilation).
+It also includes the assertion command, which is not present in normal verilog.
+
+If you open up the generated `embc_F_ab5.sv` file, you will see in the top comments an EMBC command that can be used to run the EBMC
+model checker. For AB5, this is `$ ebmc ebmc_F_ab5.sv`.
 
 ## Example of Use (robotable)
 
