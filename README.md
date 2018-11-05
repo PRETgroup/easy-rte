@@ -108,11 +108,16 @@ This entire example is provided in the `/example/ab5` folder of this repository,
 
 Once you have compiled AB5 using `make c_enf PROJECT=ab5`, you can navigate to `/example/ab5` directory.
 
-There, you can run `cbmc ab5_main_cbmc.c F_ab5.c`, and it will tell you `VERIFICATION SUCCESSFUL`, i.e. the policy can not enter a violation state.
+You will see that a file `cbmc_main_ab5.c` is automatically generated for you. You may open this file to inspect it.
 
-Note that this uses its own `_cbmc` main file which removes example looping and adds sources of nondeterminism to the inputs and internal state.
+This file is a cbmc-ready main file for you to ensure that entering a violation state of a policy is impossible (i.e. your recover transitions were correctly specified). 
+It makes all the environmental inputs, the controller outputs, and the enforcer internal state and data vars _nondeterministic_.
+This ensures that _all operating cases_ are checked.
+See http://www.cprover.org/cprover-manual/modeling-nondet.html for an explanation.
 
-See http://www.cprover.org/cprover-manual/modeling-nondet.html for an explanation on this.
+In the top comments of the file it will describe the cbmc command required to run it. In the case of ab5, this is `$ cbmc cbmc_main_ab5.c F_ab5.c`. 
+
+Once run, this will tell you `VERIFICATION SUCCESSFUL`, i.e. this policy can not enter a violation state.
 
 ## Example of Use (robotable)
 
