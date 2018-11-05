@@ -64,6 +64,7 @@ func (c *Converter) ConvertAll() ([]OutputFile, error) {
 	finishedConversions := make([]OutputFile, 0, len(c.Funcs))
 
 	type templateInfo struct {
+		Prefix    string
 		Name      string
 		Extension string
 	}
@@ -73,18 +74,19 @@ func (c *Converter) ConvertAll() ([]OutputFile, error) {
 	//convert all functions
 	if c.Language == "c" {
 		templates = []templateInfo{
-			{"functionC", "c"},
-			{"functionH", "h"},
+			{"F_", "functionC", "c"},
+			{"F_", "functionH", "h"},
+			{"cbmc_main_", "mainCBMCC", "c"},
 		}
 	}
 	if c.Language == "vhdl" {
 		templates = []templateInfo{
-			{"functionVhdl", "vhdl"},
+			{"F_", "functionVhdl", "vhdl"},
 		}
 	}
 	if c.Language == "verilog" {
 		templates = []templateInfo{
-			{"functionVerilog", "v"},
+			{"F_", "functionVerilog", "v"},
 		}
 	}
 	for _, template := range templates {
@@ -95,7 +97,7 @@ func (c *Converter) ConvertAll() ([]OutputFile, error) {
 				return nil, errors.New("Couldn't format template (fb) of" + c.Funcs[i].Name + ": " + err.Error())
 			}
 
-			finishedConversions = append(finishedConversions, OutputFile{Name: "F_" + c.Funcs[i].Name, Extension: template.Extension, Contents: output.Bytes()})
+			finishedConversions = append(finishedConversions, OutputFile{Name: template.Prefix + c.Funcs[i].Name, Extension: template.Extension, Contents: output.Bytes()})
 		}
 	}
 
