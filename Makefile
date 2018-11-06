@@ -55,6 +55,10 @@ c_build: example_$(PROJECT)
 example_$(PROJECT): example/$(PROJECT)/$(PROJECT)_main.c example/$(PROJECT)/F_$(PROJECT).c
 	gcc example/$(PROJECT)/$(PROJECT)_main.c example/$(PROJECT)/F_$(PROJECT).c -o example_$(PROJECT)
 
+#Bonus: C assembly
+c_asm: example/$(PROJECT)/F_$(PROJECT).c
+	gcc -S example/$(PROJECT)/F_$(PROJECT).c -o example/$(PROJECT)/F_$(PROJECT).s
+
 clean:
 	rm -f easy-rte-c
 	rm -f easy-rte-parser
