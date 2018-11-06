@@ -30,7 +30,7 @@ run_cbmc: default c_enf
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
 
 run_ebmc: default verilog_enf
-	ebmc example/$(PROJECT)/ebmc_F_$(PROJECT).sv
+	ebmc example/$(PROJECT)/ebmc_F_$(PROJECT).sv --trace
 
 #convert $(PROJECT) into the C binary name
 $(PROJECT): example/$(PROJECT)/F_$(PROJECT).c

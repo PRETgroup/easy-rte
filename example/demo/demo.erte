@@ -12,7 +12,10 @@ policy B5 of demo {
 	states {
 		ls {
 			//if we receive a B, reset the timer
-			-> ls on B && v < B5_ticks: v := 0;
+			-> ls on B: v := 0;
+
+			//if we don't receive a B, just continue
+			-> ls on !B && v < B5_ticks; 
 
 			//if we haven't received a B for > B5_ticks, then violation
 			-> violation on !B && v >= B5_ticks recover B := 1;

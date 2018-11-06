@@ -31,12 +31,14 @@ policy IDMT of overcurrentDetector {
 
 	state s_safe {	
 		-> s_off on !relay_en;
+		-> s_safe on I_mA <= Iset_mA;
 		-> s_overcurrent on I_mA > Iset_mA: t := 0;
 	}
 
 	state s_overcurrent {
 		-> s_safe on I_mA <= Iset_mA;
 		-> s_off on !relay_en;
+		-> s_overcurrent on I_mA > Iset_mA && t <= ((K*B) / ((I_mA / Iset_mA) - 1));
 
 		-> violation on t > ((K*B) / ((I_mA / Iset_mA) - 1)) recover relay_en := 0;
 	}

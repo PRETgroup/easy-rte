@@ -19,7 +19,7 @@ policy p1 of steam_pid {
 		lsafe {
 			-> lsafe on Pc <= Ps && Tsp <= Tmax;
 
-			-> lunsafe on Pc >= Ps && Tsp >= Tmax: v := 0;
+			-> lunsafe on Pc > Ps && Tsp <= Tmax: v := 0;
 
 			-> violation on Tsp > Tmax recover Tsp := Tmax;
 		}
