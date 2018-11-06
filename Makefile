@@ -1,5 +1,15 @@
 .PHONY: default c_enf verilog_enf $(PROJECT) c_build
 
+# run this makefile with the following options
+# make [c_enf] [c_build] [run_cbmc] PROJECT=XXXXX
+#   c_enf: make a C enforcer for the project
+#   c_build: compile the C enforcer with a main file (this will need to be provided manually)
+#   run_cbmc: check the compiled C enforcer to ensure correctness
+#
+# make [verilog_enf] [run_ebmc] PROJECT=XXXXX
+#   verilog_enf: make a Verilog enforcer for the project
+#   run_ebmc: check the compiled Verilog enforcer to ensure correctness
+
 default: easy-rte-c easy-rte-parser
 
 #convert C build instruction to C target
