@@ -110,6 +110,8 @@ Now, we can provide a `main.c` file which has our controller function in it, and
 
 This entire example is provided in the `/example/ab5` folder of this repository, including an example top level file, and can be built from the root directory using `make c_enf PROJECT=ab5`.
 
+To compile it together with the example main file, run `make c_enf c_build PROJECT=ab5`
+
 ### Using CBMC on AB5
 
 Remember to install CBMC with either `sudo apt install cbmc` or from https://www.cprover.org/cbmc/
