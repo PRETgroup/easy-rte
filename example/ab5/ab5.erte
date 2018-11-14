@@ -20,7 +20,7 @@ policy AB5 of ab5 {
 			-> s1 on (A and !B): v := 0;
 			
 			//if we receive a B, or an A and a B (i.e. if we receive a B) then VIOLATION							
-			-> violation on ((!A and B) or (A and B));	
+			-> violation on ((!A and B) or (A and B)) recover B := 0;	
 		}
 
 		//s1 is "we're waiting for a B, and it needs to get here within 5 ticks"
@@ -31,8 +31,10 @@ policy AB5 of ab5 {
 			//if we receive a B only, head to state s0					
 			-> s0 on (!A and B);
 
-			//if we go overtime, or we receive another A, then VIOLATION			
-			-> violation on ((v >= 5) or (A and B) or (A and !B));	
+			//if we go overtime, or we receive another A, then VIOLATION	(swap these out for manual solutions if desired)		
+			-> violation on ((v >= 5) or (A and B) or (A and !B));
+			//-> violation on (v >= 5) recover B := 1;
+			//-> violation on (A and B) or (A and !B) recover A := 0;	
 		}
 	}
 }

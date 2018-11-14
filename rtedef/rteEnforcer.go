@@ -179,12 +179,8 @@ type STExpressionSolution struct {
 	Comment     string
 }
 
-//SolveViolationTransition will attempt to solve a given transition
-//TODO: consider where people have been too explicit with their time variables, and have got non-violating time-based transitions
-//1. Check to see if there is a non-violating transition with an equivalent guard to the violating transition
-//2. Select first solution
-func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy bool) STExpressionSolution {
-
+//ReturnManualRecovery will solve a given transition with specified recovery actions
+func (enf *PEnforcer) ReturnManualRecovery(tr PSTTransition, inputPolicy bool) STExpressionSolution {
 	//check if a recovery was provided
 	if len(tr.Recover) > 0 {
 		solution := make([]stconverter.STExpression, 0)
@@ -206,8 +202,14 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 		// }
 		return STExpressionSolution{Expressions: solution, Comment: fmt.Sprintf("Recovery instructions manually provided.")}
 	}
+	return STExpressionSolution{Expressions: nil, Comment: "No possible solutions - please provide recovery instructions!"}
+}
 
-	fmt.Printf("Automatically deriving a solution for violation transition \r\n\t%s -> %s on (%s)\r\n\t(If this is undesirable behaviour, use a 'recover' keyword in the erte file to manually specify solution)\r\n", tr.Source, tr.Destination, stconverter.CCompileExpression(tr.STGuard))
+//SolveViolationTransition will attempt to solve a given transition
+//TODO: consider where people have been too explicit with their time variables, and have got non-violating time-based transitions
+//1. Check to see if there is a non-violating transition with an equivalent guard to the violating transition
+//2. Select first solution
+func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy bool) STExpressionSolution {
 
 	posSolTrs := make([]PSTTransition, 0) //possible Solution Transitions
 	var pol PEnforcerPolicy
@@ -231,17 +233,29 @@ func (enf *PEnforcer) SolveViolationTransition(tr PSTTransition, inputPolicy boo
 
 	// Make sure there's at least one solution
 	if len(posSolTrs) == 0 {
-		fmt.Printf("\tNOTE: No solution found!\r\n")
-		return STExpressionSolution{Expressions: nil, Comment: "No possible solutions!"}
+
+		sol := enf.ReturnManualRecovery(tr, inputPolicy)
+		if sol.Expressions == nil {
+			fmt.Printf("Problem when deriving a solution for violation transition \r\n\t%s -> %s on (%s)\r\n\t(If this is undesirable behaviour, use a 'recover' keyword in the erte file to manually specify solution)\r\n", tr.Source, tr.Destination, stconverter.CCompileExpression(tr.STGuard))
+			fmt.Printf("\tNOTE: No solution found!\r\n")
+		}
+		return sol
 	}
 
 	//1. Check to see if there is a non-violating transition with an equivalent guard to the violating transition
 	for _, posSolTr := range posSolTrs {
 		if reflect.DeepEqual(tr.STGuard, posSolTr.STGuard) {
-			fmt.Printf("\tNOTE: (Certain) Solution found with no edits required! (Equivalent safe transition found)\r\n")
+			//fmt.Printf("\tNOTE: (Certain) Solution found with no edits required! (Equivalent safe transition found)\r\n")
 			return STExpressionSolution{Expressions: nil, Comment: fmt.Sprintf("Selected non-violation transition \"%s -> %s on %s\" which has an equivalent guard, so no action is required", posSolTr.Source, posSolTr.Destination, posSolTr.Condition)}
 		}
 	}
+
+	//check if a recovery was provided
+	if len(tr.Recover) > 0 {
+		return enf.ReturnManualRecovery(tr, inputPolicy)
+	}
+
+	fmt.Printf("Automatically deriving a solution for violation transition \r\n\t%s -> %s on (%s)\r\n\t(If this is undesirable behaviour, use a 'recover' keyword in the erte file to manually specify solution)\r\n", tr.Source, tr.Destination, stconverter.CCompileExpression(tr.STGuard))
 
 	//2. Select first solution
 	posSolTr := posSolTrs[0]
