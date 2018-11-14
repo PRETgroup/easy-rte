@@ -56,7 +56,7 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 			{{end}}
 		endcase
 
-
+		transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 0;
 		//select transition to advance state
 		case({{$block.Name}}_policy_{{$pol.Name}}_state)
 		{{range $sti, $st := $pol.States}}` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}: begin
@@ -68,6 +68,7 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 					//set expressions
 					{{range $exi, $ex := $tr.Expressions}}
 					{{$ex.VarName}} = {{$ex.Value}};{{end}}
+					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
 				end {{end}}
 			end
 			{{end}}
@@ -105,6 +106,7 @@ module F_{{$block.Name}} (
 
 //For each policy, we need a reg for the state machine
 {{range $polI, $pol := $block.Policies}}reg {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state = 0;
+reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check register flag (will be optimised away in normal compiles)
 {{end}}
 
 {{range $index, $var := $block.InputVars}}
@@ -178,6 +180,7 @@ module ebmc_F_{{$block.Name}} (
 
 //For each policy, we need a reg for the state machine
 {{range $polI, $pol := $block.Policies}}reg {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state = 0;
+reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check register flag (will be optimised away in normal compiles)
 {{end}}
 
 {{range $index, $var := $block.InputVars}}
@@ -217,9 +220,11 @@ module ebmc_F_{{$block.Name}} (
 {{range $index, $var := $block.OutputVars}}
 	assign {{$var.Name}}_ctp_out = {{$var.Name}};
 {{end}}
-	//For each policy, ensure correctness (systemverilog only)
+	//For each policy, ensure correctness (systemverilog only) and liveness
 	{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+	assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
 	{{end}}
+	
 endmodule{{end}}`
 
 var verilogTemplateFuncMap = template.FuncMap{

@@ -79,12 +79,15 @@ void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Nam
 				break;
 			} {{end}}{{end}}
 			
+			//ensure a transition was taken in this state
+			assert(false); //if we are still here, then no transition was taken and we are no longer satisfying liveness
+
 			break;
 
 		{{end}}
 	}
 
-	//ensure we are safe
+	//ensure we did not violate (i.e. we did not enter violation state)
 	assert(me->_policy_{{$pol.Name}}_state != POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
 }
 {{end}}

@@ -62,7 +62,7 @@ We can present this as the following _easy-rte_ policy format:
 ```
 policy ab5 of ab5Function {
 	internals {
-		dtimer v;
+		dtimer_t v;
 	}
 
 	states {
@@ -109,6 +109,8 @@ Then, we convert this policy XML file into an _enforcer_, which is written in C.
 Now, we can provide a `main.c` file which has our controller function in it, and then compile the project together.
 
 This entire example is provided in the `/example/ab5` folder of this repository, including an example top level file, and can be built from the root directory using `make c_enf PROJECT=ab5`.
+
+To compile it together with the example main file, run `make c_enf c_build PROJECT=ab5`
 
 ### Using CBMC on AB5
 
@@ -182,13 +184,13 @@ interface of Robotable {
 
 policy stayOnTable of Robotable {
 	internals {
-		int16_t minX := -10;
-		int16_t maxX := 10;
-		int16_t minY := -10;
-		int16_t maxY := 10;
+		constant int16_t minX := -10; //use of "constant" for constant variables allows for compiler 
+		constant int16_t maxX := 10;  //to make smarter decisions around these internal variables
+		constant int16_t minY := -10;
+		constant int16_t maxY := 10;
 
-		int16_t maxSpeed := 1;
-		int16_t minSpeed := -1;
+		constant int16_t maxSpeed := 1;
+		constant int16_t minSpeed := -1;
 	}
 
 	states {

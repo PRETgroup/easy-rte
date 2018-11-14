@@ -110,6 +110,9 @@ type PEnforcer struct {
 
 //MakePEnforcer will convert a given policy to an enforcer for that policy
 func MakePEnforcer(il InterfaceList, p Policy) (*PEnforcer, error) {
+	//ensure that the policy p has all self loops
+	p.EnsureSelfLoops()
+
 	//make the enforcer
 	enf := &PEnforcer{interfaceList: il, Name: p.Name}
 	//first, convert policy transitions

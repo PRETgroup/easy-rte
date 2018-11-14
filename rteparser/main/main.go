@@ -90,6 +90,10 @@ func main() {
 	}
 
 	for _, fun := range funcs {
+		for i := 0; i < len(fun.Policies); i++ {
+			fun.Policies[i].EnsureSelfLoops()
+		}
+
 		name := fun.Name
 		extn := outputExtension
 		//TODO: work out what extension to use based on the fb.XMLname field

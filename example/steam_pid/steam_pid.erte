@@ -1,12 +1,38 @@
 function steam_pid;
 interface of steam_pid {
-	in int32_t temp;  //in here means that they're going from PLANT to CONTROLLER
-	out int32_t power; //out here means that they're going from CONTROLLER to PLANT
+	//in here means that they're going from PLANT to CONTROLLER
+	in int32_t Tsp;  
+	in int32_t Tc;
+
+	//out here means that they're going from CONTROLLER to PLANT
+	out int32_t Pc;
 }
 
 policy p1 of steam_pid {
 	internals {
+		constant int32_t Tmax := 100;
+		constant int32_t Ps := 1000;
 		dtimer_t v;
+	}
+
+	states {
+		lsafe {
+			-> lsafe on Pc <= Ps && Tsp <= Tmax;
+
+			-> lunsafe on Pc > Ps && Tsp <= Tmax: v := 0;
+
+			-> violation on Tsp > Tmax recover Tsp := Tmax;
+		}
+
+		lunsafe {
+			-> lunsafe on Pc > Ps && v < (Ps - Pc) && Tsp <= Tmax;
+
+			-> lsafe on Pc <= Ps && Tsp <= Tmax;
+
+			-> violation on Tsp > Tmax recover Tsp := Tmax;
+
+			-> violation on v >= (Ps - Pc) recover Pc := Ps;
+		}
 	}
 
 }
