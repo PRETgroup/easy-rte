@@ -68,7 +68,7 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 					//set expressions
 					{{range $exi, $ex := $tr.Expressions}}
 					{{$ex.VarName}} = {{$ex.Value}};{{end}}
-					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
+					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = transTaken_{{$block.Name}}_policy_{{$pol.Name}} + 1;
 				end {{end}}
 			end
 			{{end}}
@@ -233,6 +233,7 @@ var verilogTemplateFuncMap = template.FuncMap{
 	"getPolicyEnfInfo":                 getPolicyEnfInfo,
 	"getVerilogWidthArray":             getVerilogWidthArray,
 	"getVerilogWidthArrayForType":      getVerilogWidthArrayForType,
+	"add1IfClock":                      add1IfClock,
 
 	"compileExpression": stconverter.VerilogCompileExpression,
 

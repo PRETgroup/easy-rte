@@ -61,6 +61,16 @@ func getVerilogWidthArrayForType(ctype string) string {
 	return verilogType
 }
 
+func add1IfClock(ctype string) string {
+	if ctype == "dtimer_t" {
+		return " + 1"
+	}
+	if ctype == "rtimer_t" {
+		panic("rtimer type not allowed in conversion")
+	}
+	return ""
+}
+
 func getVerilogWidthArray(l int) string {
 	cl2 := ceilLog2(uint64(l)) - 1
 	if cl2 >= 1 {
