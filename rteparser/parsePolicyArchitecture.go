@@ -252,11 +252,13 @@ func (t *pParse) parsePState(fbIndex int) *ParseError {
 									VarName: expressionVar,
 									Value:   strings.Join(expressionComponents, " "),
 								})
+								expressionComponents = make([]string, 0) //reset expressions
 							} else {
 								expressions = append(expressions, rtedef.PExpression{
 									VarName: expressionVar,
 									Value:   strings.Join(expressionComponents, " "),
 								})
+								expressionComponents = make([]string, 0) //reset expressions
 							}
 							expressionVar = ""
 						}
