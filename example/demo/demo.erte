@@ -11,14 +11,14 @@ policy B5 of demo {
 
 	states {
 		ls {
+			//enforce a B every B5_ticks, then violation
+			enforce B := 1 if v >= B5_ticks;
+
 			//if we receive a B, reset the timer
 			-> ls on B: v := 0;
 
 			//if we don't receive a B, just continue
-			-> ls on !B && v < B5_ticks; 
-
-			//if we haven't received a B for > B5_ticks, then violation
-			-> violation on !B && v >= B5_ticks recover B := 1;
+			-> ls on !B && v < B5_ticks; 			
 		}
 	}
 }

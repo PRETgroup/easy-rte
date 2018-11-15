@@ -92,6 +92,7 @@ func main() {
 	for _, fun := range funcs {
 		for i := 0; i < len(fun.Policies); i++ {
 			fun.Policies[i].EnsureSelfLoops()
+			fun.Policies[i].SortTransitionsViolationsToEnd()
 		}
 
 		name := fun.Name

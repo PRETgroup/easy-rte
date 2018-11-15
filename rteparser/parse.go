@@ -37,6 +37,8 @@ const (
 	pOn    = "on"
 
 	pRecover = "recover"
+	pEnforce = "enforce"
+	pIf      = "if"
 
 	pConstant = "constant"
 

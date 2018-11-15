@@ -179,15 +179,106 @@ func (t *pParse) parsePState(fbIndex int) *ParseError {
 	}
 
 	//now we have an unknown number of ->s
-	// format is -> <destination> [on guard] [: output expression][, output expression...] ;
+	// format is
+	// -> <destination> [on guard] [: output expression][, output expression...] ;
+	// for transitions, or,
+	// enforce [expression][, expression...] on [guard]
 	for {
+		var expressions []rtedef.PExpression
+		var recoveries []rtedef.PExpression
+		var expressionComponents []string
+		var expressionVar string
 		s := t.pop()
+
 		if s == "" {
 			return t.error(ErrUnexpectedEOF)
 		}
 		if s == pCloseBrace {
 			break
 		}
+		if s == pEnforce {
+			//the new syntax for violation transitions
+
+			//t.pop() //clear the pEnforce
+
+			//we now have a number of expressions, separated by commas, terminated by a pIf
+			expressionVar := ""
+			for {
+				if t.peek() == pComma || t.peek() == pIf || t.peek() == pSemicolon {
+					//finish the previous expression (if possible, indicated by expressionVar) and start the next one (if available, indicated by a comma)
+					if expressionVar != "" {
+						recoveries = append(recoveries, rtedef.PExpression{
+							VarName: expressionVar,
+							Value:   strings.Join(expressionComponents, " "),
+						})
+						expressionComponents = make([]string, 0) //reset expressions
+						expressionVar = ""
+					}
+					if t.peek() == pComma {
+						t.pop()
+						continue
+					}
+					break
+				}
+				s = t.pop()
+				if s == "" {
+					return t.error(ErrUnexpectedEOF)
+				}
+				//we already dealt with case where it's a comma or a semicolon in the peek section above
+				if expressionVar == "" { //we've not yet started the expression, so here's the "VARIABLE :=" part
+					expressionVar = s
+					s = t.pop()
+					if s != pAssigment {
+						return t.errorUnexpectedWithExpected(s, pAssigment)
+					}
+					continue
+				} else {
+					//now here's the condition components
+					expressionComponents = append(expressionComponents, s)
+				}
+			}
+
+			//now we have a pIf or a semicolon
+
+			//next is on if we have a condition
+			var condComponents []string
+			if t.peek() == pIf {
+
+				t.pop() //clear the pIf
+
+				//now we have an unknown number of condition components, terminated by a semicolon
+				for {
+					//pColon means that there are EXPRESSIONS that follow, but we're done here
+					//pSemicolon means that there is NOTHING that follows, and we're done here
+					if t.peek() == pColon || t.peek() == pSemicolon || t.peek() == pRecover {
+						break
+					}
+
+					s = t.pop()
+					if s == "" {
+						return t.error(ErrUnexpectedEOF)
+					}
+
+					//if any condComponent is "&&" then turn it into and
+					if s == "&&" {
+						s = "and"
+					}
+					//if any condComponint is "||" then turn it into or
+					if s == "||" {
+						s = "or"
+					}
+					condComponents = append(condComponents, s)
+
+				}
+			}
+			if len(condComponents) == 0 { //put in a default condition if no condition exists
+				condComponents = append(condComponents, "true")
+			}
+
+			//add a transition to the violation state
+			fb.Policies[len(fb.Policies)-1].AddTransition(name, "violation", strings.Join(condComponents, " "), expressions, recoveries)
+		}
+
 		if s == pTrans {
 
 			//next is dest state
@@ -226,11 +317,6 @@ func (t *pParse) parsePState(fbIndex int) *ParseError {
 			if len(condComponents) == 0 { //put in a default condition if no condition exists
 				condComponents = append(condComponents, "true")
 			}
-
-			var expressions []rtedef.PExpression
-			var recoveries []rtedef.PExpression
-			var expressionComponents []string
-			var expressionVar string
 
 			expressionsAreRecovery := false
 

@@ -78,6 +78,20 @@ type Policy struct {
 	Transitions  []PTransition `xml:"Machine>PTransition,omitempty"`
 }
 
+//SortTransitionsViolationsToEnd decreases the priority of all violation transitions but otherwise keeps them in the same order
+func (p *Policy) SortTransitionsViolationsToEnd() {
+	violTrans := make([]PTransition, 0, len(p.Transitions))
+	nViolTrans := make([]PTransition, 0, len(p.Transitions))
+	for i := 0; i < len(p.Transitions); i++ {
+		if p.Transitions[i].Destination != "violation" {
+			nViolTrans = append(nViolTrans, p.Transitions[i])
+		} else {
+			violTrans = append(violTrans, p.Transitions[i])
+		}
+	}
+	p.Transitions = append(nViolTrans, violTrans...)
+}
+
 //PState is a state in the policy specification of an enforcerFB
 type PState string
 
