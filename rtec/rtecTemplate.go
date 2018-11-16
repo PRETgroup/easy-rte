@@ -130,7 +130,8 @@ typedef struct {
 typedef struct {
 	{{range $polI, $pol := $block.Policies}}enum {{$block.Name}}_policy_{{$pol.Name}}_states _policy_{{$pol.Name}}_state;
 	{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}{{$var.Type}} {{$var.Name}}{{if $var.ArraySize}}[{{$var.ArraySize}}]{{end}}{{end}}{{end}};
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}{{$var.Type}} {{$var.Name}}{{if $var.ArraySize}}[{{$var.ArraySize}}]{{end}};
+	{{end}}{{end}}
 	{{end}}
 	{{end}}
 } enforcervars_{{$block.Name}}_t;
