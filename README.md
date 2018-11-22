@@ -41,7 +41,7 @@ Easy-rte is based on Structured Text (ST) operators and syntax. When making guar
 | Division       |  `/`        |
 | Not            | `!` or NOT  |
 | And            | `&&` or AND |
-| Or             | `||` or OR  |
+| Or             | `\|\|` or OR  |
 | Brackets       | `(` and `)` |
 
 ## Example of Use (AB5)
