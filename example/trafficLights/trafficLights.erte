@@ -36,6 +36,8 @@ policy MUTEX of trafficLights {
 		-> s_ew_g on EW_G and v > 5: v := 0;
 		-> s_ns_g on NS_G and v > 5: v := 0;
 
+		-> s_red on !EW_G and !NS_G;
+
 		-> violation on EW_G and v <= 5 recover EW_G := 0;
 		-> violation on NS_G and v <= 5 recover NS_G := 0;
 	}
@@ -48,6 +50,7 @@ policy MUTEX of trafficLights {
 		//must be green for at least 50 ticks
 		-> violation on !NS_G and v < 50 recover NS_G := 1;
 		-> s_ns_y on !NS_G: v := 0;
+		-> s_ns_g on NS_G;
 	}
 
 	state s_ns_y {
@@ -58,6 +61,7 @@ policy MUTEX of trafficLights {
 		//must be yellow for at least 50 ticks
 		-> violation on !NS_Y and v < 50 recover NS_Y := 1;
 		-> s_red on !NS_Y: v := 0;
+		-> s_ns_y on NS_Y;
 	}
 
 	state s_ew_g {
@@ -68,6 +72,7 @@ policy MUTEX of trafficLights {
 		//must be green for at least 50 ticks
 		-> violation on !EW_G and v < 50 recover EW_G := 1;
 		-> s_ew_y on !EW_G: v := 0;
+		-> s_ew_g on EW_G;
 	}
 
 	state s_ew_y {
@@ -78,6 +83,7 @@ policy MUTEX of trafficLights {
 		//must be yellow for at least 50 ticks
 		-> violation on !EW_Y and v < 50 recover EW_Y := 1;
 		-> s_red on !EW_Y and v >= 50: v := 0;
+		-> s_ew_y on EW_Y;
 	}
 
 	state s_fault {
@@ -90,7 +96,8 @@ policy MUTEX of trafficLights {
 		-> violation on !NS_Y and v < 10 recover NS_Y := 1;
 		-> violation on !EW_Y and v < 10 recover EW_Y := 1;
 
-		-> s_fault_off on v = 10: v := 0;
+		-> s_fault_off on v >= 10: v := 0;
+		-> s_fault on v < 10;
 	}
 
 	state s_fault_off {
@@ -102,6 +109,7 @@ policy MUTEX of trafficLights {
 		-> violation on NS_Y recover NS_Y := 0;
 		-> violation on EW_Y recover EW_Y := 0;
 
-		-> s_red on v = 10;
+		-> s_red on v >= 10;
+		-> s_fault_off on v < 10;
 	}
 }
