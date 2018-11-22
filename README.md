@@ -26,6 +26,23 @@ Then, download this repository, and run `make` or `make default`, which will gen
   * Obtain CBMC (C model checker) by running `sudo apt install cbmc`. Website here: https://www.cprover.org/cbmc/
   * Obtain EBMC (Verilog model checker) by going to website https://www.cprover.org/ebmc/
 
+## A note on Easy-rte language
+
+Easy-rte is based on Structured Text (ST) operators and syntax. When making guards, ensure that you adhere to the following operators:
+| Operator       |     Code    |
+|----------------|-------------|
+| Assignment     |  `:=`       |
+| Equality       |  `=`        |
+| Inequality     |  `<>`       |
+| Addition       |  `+`        |
+| Subtraction    |  `-`        |
+| Multiplication |  `*`        |
+| Division       |  `/`        |
+| Not            | `!` or NOT  |
+| And            | `&&` or AND |
+| Or             | `||` or OR  |
+| Brackets       | `(` and `)` |
+
 ## Example of Use (AB5)
 
 Imagine a function which inputs boolean `A` and outputs boolean `B`. 

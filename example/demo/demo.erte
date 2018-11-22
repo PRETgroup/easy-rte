@@ -1,24 +1,28 @@
 function demo;
 interface of demo {
-	out bool B;
+	in int16_t A;
+	out int16_t B;
 }
 
 policy B5 of demo {
 	internals {
-		constant uint8_t B5_ticks := 5;
+		constant uint8_t neq_ticks := 5;
 		dtimer_t v := 0;
 	}
 
 	states {
 		ls {
-			//enforce a B every B5_ticks, then violation
-			enforce B := 1 if v >= B5_ticks;
+			////enforce an equality every neq_ticks, then violation
+			//enforce B := 1 if v >= neq_ticks;
 
 			//if we receive a B, reset the timer
-			-> ls on B: v := 0;
+			-> ls on A = B: v := 0;
 
 			//if we don't receive a B, just continue
-			-> ls on !B && v < B5_ticks; 			
+			-> ls on A <> B && v < neq_ticks; 	
+
+			//violation otherwise
+			-> violation on A <> B && v >= neq_ticks recover B := A;		
 		}
 	}
 }
