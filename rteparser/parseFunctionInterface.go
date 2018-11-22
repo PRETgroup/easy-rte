@@ -95,14 +95,12 @@ func (t *pParse) addFunctionIo(isInput bool, fbIndex int) *ParseError {
 			//deal with brackets, if we have an open bracket we must have a close bracket, etc
 			if s == pOpenBracket && bracketOpen == 0 {
 				bracketOpen = 1
-			}
-			if s == pOpenBracket && bracketOpen != 0 {
+			} else if s == pOpenBracket && bracketOpen != 0 {
 				return t.errorUnexpectedWithExpected(s, "[Value]")
 			}
 			if s == pCloseBracket && bracketOpen == 1 {
 				bracketOpen = 2
-			}
-			if s == pCloseBracket && bracketOpen != 1 {
+			} else if s == pCloseBracket && bracketOpen != 1 {
 				return t.errorUnexpectedWithExpected(s, pSemicolon)
 			}
 			if s == pSemicolon && bracketOpen == 1 { //can't return if brackets are open
