@@ -2,7 +2,6 @@ package rtedef
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -180,40 +179,4 @@ func (efb *Policy) AddTransition(source string, dest string, cond string, expres
 		Recover:     recoveries,
 	})
 	return nil //TODO: make sure [source] and [dest] can be found, make sure [cond] is valid, make sure [expressions] is valid
-}
-
-//EnsureSelfLoops will ensure that for every given state in the policy, there is a self-loop specified.
-//If not, it will create one by taking the ANDs of all NOTs of all outgoing transitions.
-func (efb *Policy) EnsureSelfLoops() error {
-	for i := 0; i < len(efb.States); i++ {
-		sName := efb.States[i]
-		selfLoopFound := false
-		outgoingTransitions := make([]PTransition, 0)
-		for j := 0; j < len(efb.Transitions); j++ {
-			if efb.Transitions[j].Source == sName {
-				if efb.Transitions[j].Destination == sName {
-					selfLoopFound = true
-					break
-				}
-				outgoingTransitions = append(outgoingTransitions, efb.Transitions[i])
-			}
-		}
-		if selfLoopFound == false {
-			condition := ""
-			for oti, ot := range outgoingTransitions {
-				if oti > 0 {
-					condition += "&&"
-				}
-				condition += "!(" + ot.Condition + ")"
-			}
-			selfTransition := PTransition{
-				Source:      sName,
-				Destination: sName,
-				Condition:   condition,
-			}
-			fmt.Printf("On %v adding self loop '%v'\r\n", sName, condition)
-			efb.Transitions = append(efb.Transitions, selfTransition)
-		}
-	}
-	return nil
 }

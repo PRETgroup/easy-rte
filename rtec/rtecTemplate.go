@@ -80,7 +80,7 @@ void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Nam
 			} {{end}}{{end}}
 			
 			//ensure a transition was taken in this state
-			assert(false); //if we are still here, then no transition was taken and we are no longer satisfying liveness
+			assert(false && "{{$block.Name}}_{{$pol.Name}}_{{$st.Name}} must take a transition"); //if we are still here, then no transition was taken and we are no longer satisfying liveness
 
 			break;
 

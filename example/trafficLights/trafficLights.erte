@@ -77,7 +77,7 @@ policy MUTEX of trafficLights {
 
 		//must be yellow for at least 50 ticks
 		-> violation on !EW_Y and v < 50 recover EW_Y := 1;
-		-> s_red on !EW_Y: v := 0;
+		-> s_red on !EW_Y and v >= 50: v := 0;
 	}
 
 	state s_fault {
