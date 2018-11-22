@@ -29,8 +29,9 @@ Then, download this repository, and run `make` or `make default`, which will gen
 ## A note on Easy-rte language
 
 Easy-rte is based on Structured Text (ST) operators and syntax. When making guards, ensure that you adhere to the following operators:
+
 | Operator       |     Code    |
-|----------------|-------------|
+| -------------- | ----------- |
 | Assignment     |  `:=`       |
 | Equality       |  `=`        |
 | Inequality     |  `<>`       |
