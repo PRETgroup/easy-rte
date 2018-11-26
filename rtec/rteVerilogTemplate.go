@@ -207,10 +207,89 @@ end
 {{range $polI, $pol := $block.Policies}}assign {{$block.Name}}_policy_{{$pol.Name}}_state_next = {{$block.Name}}_policy_{{$pol.Name}}_state;
 {{end}}
 
+endmodule
+{{end}}
 
+{{define "_combinatorialVerilog"}}{{$block := .}}
 
+module combinatorialVerilog_{{$block.Name}} (
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in,
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out,
+	{{end}}
+	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_in,
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out,
+	{{end}}
+	
+	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_in,
+	{{end}}{{end}}{{end}}{{end}}
+
+	//state variables
+	{{range $polI, $pol := $block.Policies}}{{if $polI}},
+	{{end}}input wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state_in,
+	output wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state_next{{end}}
+);
+
+{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if $var.Constant}}localparam {{$var.Name}}_in = {{$var.InitialValue}};
+{{end}}{{end}}{{end}}{{end}}
+
+inputEditMux_{{$block.Name}} inputEditMux (
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	.{{$var.Name}}_ptc_in_inputmux({{$var.Name}}_ptc_in),
+	.{{$var.Name}}_ptc_out_inputmux({{$var.Name}}_ptc_out),
+	{{end}}
+
+	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}({{$var.Name}}),{{end}}{{end}}{{end}}
+
+	{{range $polI, $pol := $block.Policies}}{{if $polI}},
+	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
+);
+
+outputEditMux_{{$block.Name}} outputEditMux (
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	.{{$var.Name}}_ptc_in_outputmux({{$var.Name}}_ptc_out),
+	{{end}}
+
+	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+	.{{$var.Name}}_ctp_in_outputmux({{$var.Name}}_ctp_in),
+	.{{$var.Name}}_ctp_out_outputmux({{$var.Name}}_ctp_out),
+	{{end}}
+
+	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),{{end}}{{end}}{{end}}
+
+	{{range $polI, $pol := $block.Policies}}{{if $polI}},
+	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
+);
+
+nextStateFunction_{{$block.Name}} nextStateFunction (
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	.{{$var.Name}}({{$var.Name}}_ptc_out),
+	{{end}}
+	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+	.{{$var.Name}}({{$var.Name}}_ctp_out),
+	{{end}}
+	
+	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),
+	{{end}}{{end}}{{end}}
+
+	//state variables
+	{{range $polI, $pol := $block.Policies}}{{if $polI}},
+	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state),
+	.{{$block.Name}}_policy_{{$pol.Name}}_state_next({{$block.Name}}_policy_{{$pol.Name}}_state_next){{end}}
+);
+
+//For each policy, ensure correctness (systemverilog only) and liveness
+{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_in >= ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation || {{$block.Name}}_policy_{{$pol.Name}}_state_next != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+{{end}}
 
 endmodule
+
 {{end}}
 
 {{define "functionVerilog"}}{{$block := index .Functions .FunctionIndex}}{{$blocks := .Functions}}
@@ -230,6 +309,7 @@ endmodule
 {{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
 {{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
 {{template "_nextStateFunction" $block}}
+{{template "_combinatorialVerilog" $block}}
 
 module F_{{$block.Name}} (
 	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
@@ -240,15 +320,6 @@ module F_{{$block.Name}} (
 	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_in,
 	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out,
 	{{end}}
-
-	//state var for EBMC to overload
-	{{range $polI, $pol := $block.Policies}}input wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state_embc_in,
-	{{end}}
-	{{range $polI, $pol := $block.Policies}}//internal vars for EBMC to overload
-	{{range $vari, $var := $pol.InternalVars}}{{if not $var.Constant}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_embc_in,
-	{{end}}{{end}}
-	{{end}}
-	
 
 	input wire CLOCK
 );
