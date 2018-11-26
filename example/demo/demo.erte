@@ -12,13 +12,10 @@ policy B5 of demo {
 
 	states {
 		ls {
-			////enforce an equality every neq_ticks, then violation
-			//enforce B := 1 if v >= neq_ticks;
-
-			//if we receive a B, reset the timer
+			//if we receive A == B, reset the timer
 			-> ls on A = B: v := 0;
 
-			//if we don't receive a B, just continue
+			//if we don't receive A == B, just continue
 			-> ls on A <> B && v < neq_ticks; 	
 
 			//violation otherwise
