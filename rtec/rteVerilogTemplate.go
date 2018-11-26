@@ -194,12 +194,15 @@ always @* begin
 		end {{end}}
 	end
 	{{end}}
+	default begin //the violation case
+		transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
+	end
 	endcase
 	{{end}}{{end}}
 
 	//For each policy, ensure correctness (systemverilog only) and liveness
 	{{range $polI, $pol := $block.Policies}}//assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
-	//assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
+	assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
 	{{end}}
 end
 
