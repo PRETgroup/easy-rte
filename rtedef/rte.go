@@ -69,6 +69,11 @@ func (v Variable) GetInitialArray() []string {
 	return raws
 }
 
+//IsDTimer returns true if DTimer
+func (v Variable) IsDTimer() bool {
+	return strings.ToLower(v.Type) == "dtimer_t"
+}
+
 //Policy stores a policy, i.e. the vars that must be kept
 type Policy struct {
 	Name         string        `xml:"Name,attr"`

@@ -30,7 +30,7 @@ run_cbmc: default
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
 
 run_ebmc: default 
-	ebmc example/$(PROJECT)/ebmc_F_$(PROJECT).sv --trace --k-induction --bound 2 --module ebmc_F_$(PROJECT)
+	ebmc example/$(PROJECT)/F_$(PROJECT).sv --trace --k-induction --bound 2 --module F_$(PROJECT)
 
 #convert $(PROJECT) into the C binary name
 $(PROJECT): example/$(PROJECT)/F_$(PROJECT).c
@@ -59,8 +59,14 @@ example_$(PROJECT): example/$(PROJECT)/$(PROJECT)_main.c example/$(PROJECT)/F_$(
 c_asm: example/$(PROJECT)/F_$(PROJECT).c
 	gcc -S example/$(PROJECT)/F_$(PROJECT).c -o example/$(PROJECT)/F_$(PROJECT).s
 
-clean:
+clean: clean_examples
 	rm -f easy-rte-c
 	rm -f easy-rte-parser
-	rm -f example_*
 	go get -u github.com/PRETgroup/goFB/goFB
+
+clean_examples:
+	rm -f example_*
+	rm -f ./example/*/*.h
+	rm -f ./example/*/*.v
+	rm -f ./example/*/*.sv
+	rm -f ./example/*/*.xml

@@ -86,8 +86,7 @@ func (c *Converter) ConvertAll() ([]OutputFile, error) {
 	}
 	if c.Language == "verilog" {
 		templates = []templateInfo{
-			{"F_", "functionVerilog", "v"},
-			{"ebmc_F_", "ebmcFunctionVerilog", "sv"},
+			{"F_", "functionVerilog", "sv"},
 		}
 	}
 	for _, template := range templates {
