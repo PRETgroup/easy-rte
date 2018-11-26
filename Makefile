@@ -30,7 +30,7 @@ run_cbmc: default
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
 
 run_ebmc: default 
-	ebmc example/$(PROJECT)/ebmc_F_$(PROJECT).sv --trace --k-induction --bound 2
+	ebmc example/$(PROJECT)/ebmc_F_$(PROJECT).sv --trace --k-induction --bound 2 --module ebmc_F_$(PROJECT)
 
 #convert $(PROJECT) into the C binary name
 $(PROJECT): example/$(PROJECT)/F_$(PROJECT).c

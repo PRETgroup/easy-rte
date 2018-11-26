@@ -7,7 +7,31 @@ import (
 )
 
 const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
-	//input policies
+//input policies
+module inputEditMux_{{$block.Name}}(
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in_inputmux,
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out_inputmux,
+	{{end}}
+
+	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}},
+	{{end}}{{end}}{{end}}
+
+	{{range $polI, $pol := $block.Policies}}{{if $polI}},
+	{{end}}input wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state{{end}}
+);
+
+{{range $index, $var := $block.InputVars}}
+{{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
+{{end}}
+
+always @* begin
+	//capture synchronous inputs
+	{{range $index, $var := $block.InputVars}}
+		{{$var.Name}} = {{$var.Name}}_ptc_in_inputmux;
+	{{end}}
+
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
 	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
 	{{else}}{{/* this is where the policy comes in */}}//INPUT POLICY {{$pol.Name}} BEGIN 
@@ -29,6 +53,15 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 	{{end}}
 	//INPUT POLICY {{$pol.Name}} END
 	{{end}}
+
+end
+
+//emit outputs
+{{range $index, $var := $block.InputVars}}
+	assign {{$var.Name}}_ptc_out_inputmux = {{$var.Name}};
+{{end}}
+
+endmodule
 {{end}}
 
 {{define "_policyOut"}}{{$block := .}}
@@ -92,6 +125,8 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 ` + "`" + `define POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation {{if len $pol.States}}{{len $pol.States}}{{else}}1{{end}}
 {{end}}
 
+{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
+
 module F_{{$block.Name}} (
 	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
 	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in,
@@ -110,6 +145,7 @@ reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check r
 {{end}}
 
 {{range $index, $var := $block.InputVars}}
+wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out_inputmux;
 {{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
 {{end}}{{range $index, $var := $block.OutputVars}}
 {{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
@@ -118,15 +154,27 @@ reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check r
 {{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}{{getVerilogType $var.Type}}{{else}}localparam{{end}} {{$var.Name}}{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
 {{end}}{{end}}{{end}}
 
+	inputEditMux_{{$block.Name}} inputEditMux (
+		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+		.{{$var.Name}}_ptc_in_inputmux({{$var.Name}}_ptc_in),
+		.{{$var.Name}}_ptc_out_inputmux({{$var.Name}}_ptc_out_inputmux),
+		{{end}}
+
+		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}({{$var.Name}}),{{end}}{{end}}{{end}}
+
+		{{range $polI, $pol := $block.Policies}}{{if $polI}},
+		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
+	);
+
 	always@(posedge CLOCK) begin
 		//capture synchronous inputs
 	{{range $index, $var := $block.InputVars}}
-		{{$var.Name}} = {{$var.Name}}_ptc_in;
+		{{$var.Name}} = {{$var.Name}}_ptc_out_inputmux;
 	{{end}}
 	{{range $index, $var := $block.OutputVars}}
 		{{$var.Name}} = {{$var.Name}}_ctp_in;
 	{{end}}
-		{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
 		{{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
 	end
 	
@@ -156,6 +204,8 @@ endmodule{{end}}
 ` + "`" + `define POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation {{if len $pol.States}}{{len $pol.States}}{{else}}1{{end}}
 {{end}}
 
+{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
+
 module ebmc_F_{{$block.Name}} (
 	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
 	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in,
@@ -184,6 +234,7 @@ reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check r
 {{end}}
 
 {{range $index, $var := $block.InputVars}}
+wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out_inputmux;
 {{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
 {{end}}{{range $index, $var := $block.OutputVars}}
 {{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
@@ -192,10 +243,23 @@ reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check r
 {{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}{{getVerilogType $var.Type}}{{else}}localparam{{end}} {{$var.Name}}{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
 {{end}}{{end}}{{end}}
 
+	inputEditMux_{{$block.Name}} inputEditMux (
+		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+		.{{$var.Name}}_ptc_in_inputmux({{$var.Name}}_ptc_in),
+		.{{$var.Name}}_ptc_out_inputmux({{$var.Name}}_ptc_out_inputmux),
+		{{end}}
+
+		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}({{$var.Name}}),{{end}}{{end}}{{end}}
+
+		{{range $polI, $pol := $block.Policies}}{{if $polI}},
+		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
+	);
+
 	always@(posedge CLOCK) begin
 		//capture synchronous inputs
 	{{range $index, $var := $block.InputVars}}
-		{{$var.Name}} = {{$var.Name}}_ptc_in;
+		{{$var.Name}} = {{$var.Name}}_ptc_out_inputmux;
 	{{end}}
 	{{range $index, $var := $block.OutputVars}}
 		{{$var.Name}} = {{$var.Name}}_ctp_in;
@@ -209,7 +273,6 @@ reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check r
 		{{range $vari, $var := $pol.InternalVars}}//{{if not $var.Constant}}{{$var.Name}} = {{$var.Name}}_embc_in;
 		{{end}}{{end}}{{end}}
 
-		{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
 		{{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
 	end
 	
