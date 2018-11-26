@@ -68,7 +68,7 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 					//set expressions
 					{{range $exi, $ex := $tr.Expressions}}
 					{{$ex.VarName}} = {{$ex.Value}};{{end}}
-					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = transTaken_{{$block.Name}}_policy_{{$pol.Name}} + 1;
+					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
 				end {{end}}
 			end
 			{{end}}
@@ -202,11 +202,11 @@ reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check r
 	{{end}}
 
 		//embc inputs to introduce nondeterminism
-		{{range $polI, $pol := $block.Policies}}{{$block.Name}}_policy_{{$pol.Name}}_state = {{$block.Name}}_policy_{{$pol.Name}}_state_embc_in % {{len $pol.States}};
+		{{range $polI, $pol := $block.Policies}}//{{$block.Name}}_policy_{{$pol.Name}}_state = {{$block.Name}}_policy_{{$pol.Name}}_state_embc_in % {{len $pol.States}};
 		{{end}}
 
 		{{range $polI, $pol := $block.Policies}}//internal vars
-		{{range $vari, $var := $pol.InternalVars}}{{if not $var.Constant}}{{$var.Name}} = {{$var.Name}}_embc_in;
+		{{range $vari, $var := $pol.InternalVars}}//{{if not $var.Constant}}{{$var.Name}} = {{$var.Name}}_embc_in;
 		{{end}}{{end}}{{end}}
 
 		{{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
