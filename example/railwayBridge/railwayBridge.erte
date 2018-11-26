@@ -31,10 +31,12 @@ policy MUTEX of railwayBridge {
 		-> violation on l2 recover l2 := 0; 
 		-> violation on l3 recover l3 := 0;
 		-> violation on l4 recover l4 := 0;
+		-> s_wait on 1;
 	}
 
 	state s_1_3_aligntracks {
 		-> s_1_3_start on sl;
+		-> s_1_3_aligntracks on 1;
 	}
 
 	state s_1_3_start {	
@@ -42,6 +44,7 @@ policy MUTEX of railwayBridge {
 		-> violation on l2 recover l2 := 0; 
 		-> violation on l4 recover l4 := 0;
 		-> s_1_3_progress on d1;
+		-> s_1_3_start on 1;
 	}
 
 	state s_1_3_progress {
@@ -50,6 +53,7 @@ policy MUTEX of railwayBridge {
 		-> violation on l2 recover l2 := 0; 
 		-> violation on l4 recover l4 := 0;
 		-> s_1_3_leaving on d3;
+		-> s_1_3_progress on 1;
 	}
 
 	state s_1_3_leaving {
@@ -59,10 +63,12 @@ policy MUTEX of railwayBridge {
 		-> violation on l3 recover l3 := 0;
 		-> violation on l4 recover l4 := 0;
 		-> s_wait on !d1 and !d3;
+		-> s_1_3_leaving on 1;
 	}
 
 	state s_2_4_aligntracks {
 		-> s_2_4_start on !sl;
+		-> s_2_4_aligntracks on 1;
 	}
 
 	state s_2_4_start {	
@@ -70,6 +76,7 @@ policy MUTEX of railwayBridge {
 		-> violation on l1 recover l1 := 0; 
 		-> violation on l3 recover l3 := 0;
 		-> s_2_4_progress on d1;
+		-> s_2_4_start on 1;
 	}
 
 	state s_2_4_progress {
@@ -78,6 +85,7 @@ policy MUTEX of railwayBridge {
 		-> violation on l2 recover l2 := 0; 
 		-> violation on l3 recover l3 := 0;
 		-> s_2_4_leaving on d3;
+		-> s_2_4_progress on 1;
 	}
 
 	state s_2_4_leaving {
@@ -87,5 +95,6 @@ policy MUTEX of railwayBridge {
 		-> violation on l3 recover l3 := 0;
 		-> violation on l4 recover l4 := 0;
 		-> s_wait on !d1 and !d3;
+		-> s_2_4_leaving on 1;
 	}
 }

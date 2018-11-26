@@ -223,7 +223,7 @@ module combinatorialVerilog_{{$block.Name}} (
 	{{end}}
 	
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_in,
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}},
 	{{end}}{{end}}{{end}}{{end}}
 
 	//state variables
@@ -233,7 +233,7 @@ module combinatorialVerilog_{{$block.Name}} (
 );
 
 {{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if $var.Constant}}localparam {{$var.Name}}_in = {{$var.InitialValue}};
+{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if $var.Constant}}{{getVerilogType $var.Type}} {{$var.Name}} = {{$var.InitialValue}};
 {{end}}{{end}}{{end}}{{end}}
 
 inputEditMux_{{$block.Name}} inputEditMux (
@@ -243,10 +243,11 @@ inputEditMux_{{$block.Name}} inputEditMux (
 	{{end}}
 
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}({{$var.Name}}),{{end}}{{end}}{{end}}
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}({{$var.Name}}),
+	{{end}}{{end}}{{end}}
 
 	{{range $polI, $pol := $block.Policies}}{{if $polI}},
-	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
+	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state_in){{end}}
 );
 
 outputEditMux_{{$block.Name}} outputEditMux (
@@ -260,10 +261,11 @@ outputEditMux_{{$block.Name}} outputEditMux (
 	{{end}}
 
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),{{end}}{{end}}{{end}}
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),
+	{{end}}{{end}}{{end}}
 
 	{{range $polI, $pol := $block.Policies}}{{if $polI}},
-	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
+	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state_in){{end}}
 );
 
 nextStateFunction_{{$block.Name}} nextStateFunction (
@@ -280,12 +282,12 @@ nextStateFunction_{{$block.Name}} nextStateFunction (
 
 	//state variables
 	{{range $polI, $pol := $block.Policies}}{{if $polI}},
-	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state),
+	{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state_in),
 	.{{$block.Name}}_policy_{{$pol.Name}}_state_next({{$block.Name}}_policy_{{$pol.Name}}_state_next){{end}}
 );
 
 //For each policy, ensure correctness (systemverilog only) and liveness
-{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_in >= ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation || {{$block.Name}}_policy_{{$pol.Name}}_state_next != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_in < ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation |-> {{$block.Name}}_policy_{{$pol.Name}}_state_next != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
 {{end}}
 
 endmodule
