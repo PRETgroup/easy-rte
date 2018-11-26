@@ -24,7 +24,7 @@ module inputEditMux_{{$block.Name}}(
 );
 
 {{range $index, $var := $block.InputVars}}
-{{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
+{{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}}/* = {{$var.InitialValue}}*/{{end}};
 {{end}}
 
 always @* begin
@@ -86,10 +86,10 @@ module outputEditMux_{{$block.Name}} (
 
 {{range $index, $var := $block.InputVars}}
 wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out_inputmux;
-{{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
+{{getVerilogType $var.Type}} {{$var.Name}}{{if $var.InitialValue}}/* = {{$var.InitialValue}}*/{{end}};
 {{end}}
 {{range $index, $var := $block.OutputVars}}
-{{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
+{{getVerilogType $var.Type}} {{$var.Name}}{{if $var.InitialValue}}/* = {{$var.InitialValue}}*/{{end}};
 {{end}}
 {{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
 {{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}reg {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}};
@@ -141,6 +141,78 @@ end
 endmodule
 {{end}}
 
+{{define "_nextStateFunction"}}{{$block := .}}
+module nextStateFunction_{{$block.Name}} (
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}},
+	{{end}}
+	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}},
+	{{end}}
+	
+	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_in,
+	{{end}}{{end}}{{end}}
+
+	//state variables
+	{{range $polI, $pol := $block.Policies}}{{if $polI}},
+	{{end}}input wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state_in,
+	output wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state_next{{end}}
+);
+
+{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}reg {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}};
+{{end}}{{end}}{{end}}
+
+//For each policy, we need a reg for the state machine
+{{range $polI, $pol := $block.Policies}}reg {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state;
+reg transTaken_{{$block.Name}}_policy_{{$pol.Name}}; //EBMC liveness check register flag (will be optimised away in normal compiles)
+{{end}}
+
+always @* begin
+	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//policy is broken!{{else}}
+	{{range $varI, $var := $pfbEnf.OutputPolicy.InternalVars}}
+	{{$var.Name}} = {{$var.Name}}_in {{if $var.IsDTimer}} + 1{{end}};
+	{{end}}
+
+	//mark no transition taken
+	transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 0;
+	{{$block.Name}}_policy_{{$pol.Name}}_state = ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation;
+
+	//select transition to advance state
+	case({{$block.Name}}_policy_{{$pol.Name}}_state_in)
+	{{range $sti, $st := $pol.States}}` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}: begin
+		{{range $tri, $tr := $pfbEnf.OutputPolicy.GetTransitionsForSource $st.Name}}{{/*
+		*/}}
+		{{if $tri}}else {{end}}if ({{$cond := getVerilogECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) begin
+			//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
+			{{$block.Name}}_policy_{{$pol.Name}}_state = ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$tr.Destination}};
+			//set expressions
+			{{range $exi, $ex := $tr.Expressions}}
+			{{$ex.VarName}} = {{$ex.Value}};{{end}}
+			transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
+		end {{end}}
+	end
+	{{end}}
+	endcase
+	{{end}}{{end}}
+
+	//For each policy, ensure correctness (systemverilog only) and liveness
+	{{range $polI, $pol := $block.Policies}}//assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+	//assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
+	{{end}}
+end
+
+//For each policy, emit state
+{{range $polI, $pol := $block.Policies}}assign {{$block.Name}}_policy_{{$pol.Name}}_state_next = {{$block.Name}}_policy_{{$pol.Name}}_state;
+{{end}}
+
+
+
+
+endmodule
+{{end}}
+
 {{define "functionVerilog"}}{{$block := index .Functions .FunctionIndex}}{{$blocks := .Functions}}
 //This file should be called F_{{$block.Name}}.sv
 //This is autogenerated code. Edit by hand at your peril!
@@ -157,6 +229,7 @@ endmodule
 
 {{if $block.Policies}}{{template "_policyIn" $block}}{{end}}
 {{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
+{{template "_nextStateFunction" $block}}
 
 module F_{{$block.Name}} (
 	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
@@ -182,7 +255,7 @@ module F_{{$block.Name}} (
 
 //For each policy, we need a reg for the state machine
 {{range $polI, $pol := $block.Policies}}reg {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state = 0;
-reg transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1; //EBMC liveness check register flag (will be optimised away in normal compiles)
+wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{{$pol.Name}}_state_next;
 {{end}}
 
 {{range $index, $var := $block.InputVars}}
@@ -226,6 +299,24 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
 	);
 
+	nextStateFunction_{{$block.Name}} nextStateFunction (
+		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+		.{{$var.Name}}({{$var.Name}}_ptc_out_inputmux),
+		{{end}}
+		//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+		.{{$var.Name}}({{$var.Name}}_ctp_out_outputmux),
+		{{end}}
+		
+		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),
+		{{end}}{{end}}{{end}}
+
+		//state variables
+		{{range $polI, $pol := $block.Policies}}{{if $polI}},
+		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state),
+		.{{$block.Name}}_policy_{{$pol.Name}}_state_next({{$block.Name}}_policy_{{$pol.Name}}_state_next){{end}}
+	);
+
 	always@(posedge CLOCK) begin
 		//capture synchronous inputs
 	{{range $index, $var := $block.InputVars}}
@@ -242,32 +333,20 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 		{{range $polI, $pol := $block.Policies}}//internal vars
 		{{range $vari, $var := $pol.InternalVars}}//{{if not $var.Constant}}{{$var.Name}} = {{$var.Name}}_embc_in;
 		{{end}}{{end}}{{end}}
-
-		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//policy is broken!{{else}}
-		//advance timers
+		
+		//advance state and timers
+		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}
 		{{range $varI, $var := $pfbEnf.OutputPolicy.GetDTimers}}
 		{{$var.Name}} = {{$var.Name}} + 1;{{end}}
-		
-		transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 0;
-		//select transition to advance state
-		case({{$block.Name}}_policy_{{$pol.Name}}_state)
-		{{range $sti, $st := $pol.States}}` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$st.Name}}: begin
-				{{range $tri, $tr := $pfbEnf.OutputPolicy.GetTransitionsForSource $st.Name}}{{/*
-				*/}}
-				{{if $tri}}else {{end}}if ({{$cond := getVerilogECCTransitionCondition $block (compileExpression $tr.STGuard)}}{{$cond.IfCond}}) begin
-					//transition {{$tr.Source}} -> {{$tr.Destination}} on {{$tr.Condition}}
-					{{$block.Name}}_policy_{{$pol.Name}}_state = ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_{{$tr.Destination}};
-					//set expressions
-					{{range $exi, $ex := $tr.Expressions}}
-					{{$ex.VarName}} = {{$ex.Value}};{{end}}
-					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
-				end {{end}}
-			end
-			{{end}}
-		endcase
+
+		{{$block.Name}}_policy_{{$pol.Name}}_state = {{$block.Name}}_policy_{{$pol.Name}}_state_next;
 		{{end}}{{end}}
-		
 	end
+
+	//For each policy, ensure correctness (systemverilog only) and liveness
+	{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+	//assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
+	{{end}}
 	
 	//emit outputs
 {{range $index, $var := $block.InputVars}}
@@ -276,11 +355,7 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 {{range $index, $var := $block.OutputVars}}
 	assign {{$var.Name}}_ctp_out = {{$var.Name}};
 {{end}}
-	//For each policy, ensure correctness (systemverilog only) and liveness
-	{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
-	assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
-	{{end}}
-	
+
 endmodule{{end}}`
 
 var verilogTemplateFuncMap = template.FuncMap{
