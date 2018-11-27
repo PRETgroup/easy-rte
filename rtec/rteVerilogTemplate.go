@@ -152,7 +152,8 @@ module nextStateFunction_{{$block.Name}} (
 	
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
 	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_in,
-	{{end}}{{end}}{{end}}
+	{{if not $var.Constant}}output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_out,
+	{{end}}{{end}}{{end}}{{end}}
 
 	//state variables
 	{{range $polI, $pol := $block.Policies}}{{if $polI}},
@@ -210,6 +211,11 @@ end
 {{range $polI, $pol := $block.Policies}}assign {{$block.Name}}_policy_{{$pol.Name}}_state_next = {{$block.Name}}_policy_{{$pol.Name}}_state;
 {{end}}
 
+//emit var outputs
+{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
+{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}assign {{$var.Name}}_out = {{$var.Name}};
+{{end}}{{end}}{{end}}
+
 endmodule
 {{end}}
 
@@ -227,6 +233,7 @@ module combinatorialVerilog_{{$block.Name}} (
 	
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
 	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}},
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_next,
 	{{end}}{{end}}{{end}}{{end}}
 
 	//state variables
@@ -281,7 +288,8 @@ nextStateFunction_{{$block.Name}} nextStateFunction (
 	
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
 	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),
-	{{end}}{{end}}{{end}}
+	{{if not $var.Constant}}.{{$var.Name}}_out({{$var.Name}}_next),
+	{{end}}{{end}}{{end}}{{end}}
 
 	//state variables
 	{{range $polI, $pol := $block.Policies}}{{if $polI}},
@@ -343,6 +351,7 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 {{end}}{{range $polI, $pol := $block.Policies}}
 {{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
 {{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}{{getVerilogType $var.Type}}{{else}}localparam{{end}} {{$var.Name}}{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
+{{if not $var.Constant}}wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_next;{{end}}
 {{end}}{{end}}{{end}}
 
 	inputEditMux_{{$block.Name}} inputEditMux (
@@ -377,19 +386,20 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 
 	nextStateFunction_{{$block.Name}} nextStateFunction (
 		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
-		.{{$var.Name}}({{$var.Name}}_ptc_out_inputmux),
+		.{{$var.Name}}({{$var.Name}}_ptc_out),
 		{{end}}
 		//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
-		.{{$var.Name}}({{$var.Name}}_ctp_out_outputmux),
+		.{{$var.Name}}({{$var.Name}}_ctp_out),
 		{{end}}
 		
 		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
 		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),
-		{{end}}{{end}}{{end}}
-
+		{{if not $var.Constant}}.{{$var.Name}}_out({{$var.Name}}_next),
+		{{end}}{{end}}{{end}}{{end}}
+	
 		//state variables
 		{{range $polI, $pol := $block.Policies}}{{if $polI}},
-		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state),
+		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state_in),
 		.{{$block.Name}}_policy_{{$pol.Name}}_state_next({{$block.Name}}_policy_{{$pol.Name}}_state_next){{end}}
 	);
 
@@ -412,8 +422,8 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 		
 		//advance state and timers
 		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}
-		{{range $varI, $var := $pfbEnf.OutputPolicy.GetDTimers}}
-		{{$var.Name}} = {{$var.Name}} + 1;{{end}}
+		{{range $varI, $var := $pfbEnf.OutputPolicy.InternalVars}}
+		{{if not $var.Constant}}{{$var.Name}} = {{$var.Name}}_next;{{end}}{{end}}
 
 		{{$block.Name}}_policy_{{$pol.Name}}_state = {{$block.Name}}_policy_{{$pol.Name}}_state_next;
 		{{end}}{{end}}
