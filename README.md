@@ -11,7 +11,41 @@ We ensure we are correct via proofs available (in a paper yet to be published), 
 
 ## What is Runtime Enforcement?
 
-TODO
+Runtime Enforcement is a subset of Run-time Assurance (RA) which focuses on formal semantics for blocking, delaying, modifying, or re-ordering events. 
+* Enforcement/assurance mechanisms aim to bridge the growing gap between system capabilites and certification abilities.
+* They shift the analysis/test burden from a complicated control system to a simpler assurance/enforcement mechanism.
+* They are already popular in several domains, for instance in operating systems, web browsers, spam filters, intrusion-detection systems, firewalls, and so on.
+
+This project aims to join the growing chorus calling for the use of Runtime Enforcement mechanisms for use within the real-world cyber-physical systems domain. Using Runtime Enforcement, we can bound the behaviour of _unpredictable_ and _untrustworthy_ processes, ensuring that they obey desired policies.
+
+## How does Runtime Enforcement work?
+
+Runtime Enforcement works by placing a special execution module _between_ your plant and your controller.
+
+```
++-------+                +------------+               
+|       | ---inputs--->  |            |
+| Plant |                | Controller |
+|       | <--outputs---  |            |
++-------+                +------------+
+```
+becomes
+```
+                           Policies
+                              \/
++-------+                +----------+               +------------+
+|       | ---inputs--->  |          | ---inputs'--> |            |
+| Plant |                | Enforcer |               | Controller |
+|       | <--outputs'--  |          | <--outputs--- |            |
++-------+                +----------+               +------------+
+```
+
+In our case, we can compile our policies to either *C* or *Verilog* code. 
+
+The C enforcers are designed to be composed with your software in a system such as a microcontroller or an Arduino.
+
+However, software enforcers cannot by their nature enforce the behaviour of the hardware that they run upon. 
+So, in this case you may want to build your enforcer to Verilog, and then compose your microcontroller with custom hardware (such as on an FPGA or ASIC) to ensure system correctness.
 
 ## Build instructions
 
