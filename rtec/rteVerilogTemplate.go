@@ -193,12 +193,12 @@ always @* begin
 	end
 	endcase
 	{{end}}{{end}}
-
-	//For each policy, ensure correctness (systemverilog only) and liveness
-	{{range $polI, $pol := $block.Policies}}//assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
-	assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
-	{{end}}
 end
+
+//For each policy, ensure correctness (systemverilog only) and liveness
+{{range $polI, $pol := $block.Policies}}//assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
+{{end}}
 
 //For each policy, emit state
 {{range $polI, $pol := $block.Policies}}assign {{$block.Name}}_policy_{{$pol.Name}}_state_next = {{$block.Name}}_policy_{{$pol.Name}}_state;
@@ -293,7 +293,9 @@ nextStateFunction_{{$block.Name}} nextStateFunction (
 );
 
 //For each policy, ensure correctness (systemverilog only) and liveness
-{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_in < ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation |-> {{$block.Name}}_policy_{{$pol.Name}}_state_next != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+{{range $polI, $pol := $block.Policies}}//assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_in < ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation |-> {{$block.Name}}_policy_{{$pol.Name}}_state_next != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+//assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_next != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_in >= ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation || {{$block.Name}}_policy_{{$pol.Name}}_state_next != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
 {{end}}
 
 endmodule
