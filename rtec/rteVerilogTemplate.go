@@ -386,10 +386,10 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 
 	nextStateFunction_{{$block.Name}} nextStateFunction (
 		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
-		.{{$var.Name}}({{$var.Name}}_ptc_out),
+		.{{$var.Name}}({{$var.Name}}_ptc_out_inputmux),
 		{{end}}
 		//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
-		.{{$var.Name}}({{$var.Name}}_ctp_out),
+		.{{$var.Name}}({{$var.Name}}_ctp_out_outputmux),
 		{{end}}
 		
 		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
@@ -399,7 +399,7 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 	
 		//state variables
 		{{range $polI, $pol := $block.Policies}}{{if $polI}},
-		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state_in),
+		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state),
 		.{{$block.Name}}_policy_{{$pol.Name}}_state_next({{$block.Name}}_policy_{{$pol.Name}}_state_next){{end}}
 	);
 
@@ -430,7 +430,7 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 	end
 
 	//For each policy, ensure correctness (systemverilog only) and liveness
-	{{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
+	{{range $polI, $pol := $block.Policies}}//assert property ({{$block.Name}}_policy_{{$pol.Name}}_state != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
 	//assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
 	{{end}}
 	
