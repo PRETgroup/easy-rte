@@ -76,7 +76,7 @@ module outputEditMux_{{$block.Name}} (
 	{{end}}
 	
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_in,
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}},
 	{{end}}{{end}}{{end}}
 
 	//state variables
@@ -91,9 +91,6 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out_inputmux;
 {{range $index, $var := $block.OutputVars}}
 {{getVerilogType $var.Type}} {{$var.Name}}{{if $var.InitialValue}}/* = {{$var.InitialValue}}*/{{end}};
 {{end}}
-{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}reg {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}};
-{{end}}{{end}}{{end}}
 
 
 always @* begin
@@ -103,10 +100,6 @@ always @* begin
 	{{end}}{{range $index, $var := $block.OutputVars}}
 		{{$var.Name}} = {{$var.Name}}_ctp_in_outputmux;
 	{{end}}
-	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $varI, $var := $pfbEnf.OutputPolicy.InternalVars}}
-	{{$var.Name}} = {{$var.Name}}_in {{if $var.IsDTimer}} + 1{{end}};
-	{{end}}{{end}}{{end}}
 
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}
 	{{if not $pfbEnf}}//{{$pol.Name}} is broken!
@@ -173,7 +166,7 @@ reg transTaken_{{$block.Name}}_policy_{{$pol.Name}}; //EBMC liveness check regis
 always @* begin
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//policy is broken!{{else}}
 	{{range $varI, $var := $pfbEnf.OutputPolicy.InternalVars}}
-	{{$var.Name}} = {{$var.Name}}_in {{if $var.IsDTimer}} + 1{{end}};
+	{{$var.Name}} = {{$var.Name}}_in;
 	{{end}}
 
 	//mark no transition taken
@@ -232,7 +225,7 @@ module combinatorialVerilog_{{$block.Name}} (
 	{{end}}
 	
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}},
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_in,
 	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_next,
 	{{end}}{{end}}{{end}}{{end}}
 
@@ -243,7 +236,9 @@ module combinatorialVerilog_{{$block.Name}} (
 );
 
 {{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if $var.Constant}}{{getVerilogType $var.Type}} {{$var.Name}} = {{$var.InitialValue}};
+{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if $var.Constant}}{{getVerilogType $var.Type}} {{$var.Name}} = {{$var.InitialValue}};{{else}}
+wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}};
+assign {{$var.Name}} = {{$var.Name}}_in{{if $var.IsDTimer}} + 1{{end}};
 {{end}}{{end}}{{end}}{{end}}
 
 inputEditMux_{{$block.Name}} inputEditMux (
@@ -271,7 +266,7 @@ outputEditMux_{{$block.Name}} outputEditMux (
 	{{end}}
 
 	{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),
+	{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}({{$var.Name}}),
 	{{end}}{{end}}{{end}}
 
 	{{range $polI, $pol := $block.Policies}}{{if $polI}},
@@ -354,49 +349,21 @@ wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_outputmux;
 {{if not $var.Constant}}wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_next;{{end}}
 {{end}}{{end}}{{end}}
 
-	inputEditMux_{{$block.Name}} inputEditMux (
+	combinatorialVerilog_{{$block.Name}} combVerilog (
 		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
-		.{{$var.Name}}_ptc_in_inputmux({{$var.Name}}_ptc_in),
-		.{{$var.Name}}_ptc_out_inputmux({{$var.Name}}_ptc_out_inputmux),
-		{{end}}
-
-		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}({{$var.Name}}),{{end}}{{end}}{{end}}
-
-		{{range $polI, $pol := $block.Policies}}{{if $polI}},
-		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
-	);
-
-	outputEditMux_{{$block.Name}} outputEditMux (
-		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
-		.{{$var.Name}}_ptc_in_outputmux({{$var.Name}}_ptc_out_inputmux),
-		{{end}}
-
-		//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
-		.{{$var.Name}}_ctp_in_outputmux({{$var.Name}}_ctp_in),
-		.{{$var.Name}}_ctp_out_outputmux({{$var.Name}}_ctp_out_outputmux),
-		{{end}}
-
-		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),{{end}}{{end}}{{end}}
-
-		{{range $polI, $pol := $block.Policies}}{{if $polI}},
-		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state({{$block.Name}}_policy_{{$pol.Name}}_state){{end}}
-	);
-
-	nextStateFunction_{{$block.Name}} nextStateFunction (
-		//inputs (plant to controller){{range $index, $var := $block.InputVars}}
-		.{{$var.Name}}({{$var.Name}}_ptc_out_inputmux),
+		.{{$var.Name}}_ptc_in({{$var.Name}}_ptc_in),
+		.{{$var.Name}}_ptc_out({{$var.Name}}_ptc_out_inputmux),
 		{{end}}
 		//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
-		.{{$var.Name}}({{$var.Name}}_ctp_out_outputmux),
+		.{{$var.Name}}_ctp_in({{$var.Name}}_ctp_in),
+		.{{$var.Name}}_ctp_out({{$var.Name}}_ctp_out_outputmux),
 		{{end}}
 		
 		{{range $polI, $pol := $block.Policies}}{{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}.{{$var.Name}}_in({{$var.Name}}),
-		{{if not $var.Constant}}.{{$var.Name}}_out({{$var.Name}}_next),
+		{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}.{{$var.Name}}_in({{$var.Name}}),
+		.{{$var.Name}}_next({{$var.Name}}_next),
 		{{end}}{{end}}{{end}}{{end}}
-	
+
 		//state variables
 		{{range $polI, $pol := $block.Policies}}{{if $polI}},
 		{{end}}.{{$block.Name}}_policy_{{$pol.Name}}_state_in({{$block.Name}}_policy_{{$pol.Name}}_state),
