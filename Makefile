@@ -30,7 +30,7 @@ run_cbmc: default
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
 
 run_ebmc: default 
-	ebmc example/$(PROJECT)/F_$(PROJECT).sv --bdd --trace --module combinatorialVerilog_$(PROJECT)
+	ebmc example/$(PROJECT)/F_$(PROJECT).sv --bdd --trace --module F_combinatorialVerilog_$(PROJECT)
 
 #convert $(PROJECT) into the C binary name
 $(PROJECT): example/$(PROJECT)/F_$(PROJECT).c
