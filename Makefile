@@ -30,7 +30,7 @@ run_cbmc: default
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
 
 run_ebmc: default 
-	ebmc example/$(PROJECT)/F_$(PROJECT).sv --bdd --trace --module F_combinatorialVerilog_$(PROJECT)
+	time --format="took %E" ebmc example/$(PROJECT)/test_F_$(PROJECT).sv --k-induction --trace --module F_combinatorialVerilog_$(PROJECT)
 
 #convert $(PROJECT) into the C binary name
 $(PROJECT): example/$(PROJECT)/F_$(PROJECT).c

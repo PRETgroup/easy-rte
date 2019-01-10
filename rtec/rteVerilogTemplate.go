@@ -66,7 +66,11 @@ const rteVerilogTemplate = `{{define "_policyIn"}}{{$block := .}}
 					{{range $exi, $ex := $tr.Expressions}}
 					{{$ex.VarName}} = {{$ex.Value}};{{end}}
 					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
-				end {{end}}
+				end {{end}} else begin
+					//only possible in a violation
+					{{$block.Name}}_policy_{{$pol.Name}}_state = ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation;
+					transTaken_{{$block.Name}}_policy_{{$pol.Name}} = 1;
+				end
 			end
 			{{end}}
 		default begin
@@ -171,7 +175,7 @@ assign {{$block.Name}}_policy_{{$pol.Name}}_state_out =  {{$block.Name}}_policy_
 
 //For each policy, ensure correctness (systemverilog only) and liveness
 {{range $polI, $pol := $block.Policies}}assert property ({{$block.Name}}_policy_{{$pol.Name}}_state_in >= ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation || {{$block.Name}}_policy_{{$pol.Name}}_state_out != ` + "`" + `POLICY_STATE_{{$block.Name}}_{{$pol.Name}}_violation);
-assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
+//(temporarily disabled) assert property (transTaken_{{$block.Name}}_policy_{{$pol.Name}} == 1);
 {{end}}
 
 endmodule
@@ -214,7 +218,7 @@ wire {{getVerilogWidthArray (add (len $pol.States) 1)}} {{$block.Name}}_policy_{
 {{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
 {{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if not $var.Constant}}{{getVerilogType $var.Type}} {{$var.Name}}{{if $var.InitialValue}} = {{$var.InitialValue}}{{end}};
 wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_next;
-{{end}}{{end}}{{end}}
+{{end}}{{end}}{{end}}{{end}}
 
 F_combinatorialVerilog_{{$block.Name}} combPart (
 	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
@@ -244,12 +248,79 @@ F_combinatorialVerilog_{{$block.Name}} combPart (
 		{{range $polI, $pol := $block.Policies}}//internal vars
 		{{$block.Name}}_policy_{{$pol.Name}}_state = {{$block.Name}}_policy_{{$pol.Name}}_state_next;
 		{{range $vari, $var := $pol.InternalVars}}{{if not $var.Constant}}{{$var.Name}} = {{$var.Name}}_next;
-		{{end}}{{end}}{{end}}{{end}}
+		{{end}}{{end}}{{end}}
 
 		
 	end
 	
-endmodule{{end}}
+endmodule
+
+module test_F_{{$block.Name}} (
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in,
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out,
+	{{end}}
+	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+	input wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_in,
+	output wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out,
+	{{end}}
+
+	input wire CLOCK
+);
+
+{{range $index, $var := $block.InputVars}}
+reg {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_in_reg;
+wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out_wire;
+reg {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ptc_out_reg;
+{{end}}
+
+//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+reg {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_in_reg;
+wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_wire;
+reg {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}}_ctp_out_reg;
+{{end}}
+
+F_{{$block.Name}} test (
+
+	//inputs (plant to controller){{range $index, $var := $block.InputVars}}
+	.{{$var.Name}}_ptc_in({{$var.Name}}_ptc_in_reg),
+	.{{$var.Name}}_ptc_out({{$var.Name}}_ptc_out_wire),
+	{{end}}
+	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+	.{{$var.Name}}_ctp_in({{$var.Name}}_ctp_in_reg),
+	.{{$var.Name}}_ctp_out({{$var.Name}}_ctp_out_wire),
+	{{end}}
+
+	.CLOCK(CLOCK)
+);
+
+always@(posedge CLOCK) begin
+	//inputs (plant to controller)
+	{{range $index, $var := $block.InputVars}}
+	{{$var.Name}}_ptc_in_reg = {{$var.Name}}_ptc_in;
+	{{$var.Name}}_ptc_out_reg = {{$var.Name}}_ptc_out_wire;
+	{{end}}
+
+	//outputs (controller to plant){{range $index, $var := $block.OutputVars}}
+	{{$var.Name}}_ctp_in_reg = {{$var.Name}}_ctp_in;
+	{{$var.Name}}_ctp_out_reg = {{$var.Name}}_ctp_out_wire;
+	{{end}}
+
+end
+
+//inputs (plant to controller)
+{{range $index, $var := $block.InputVars}}
+assign {{$var.Name}}_ptc_out = {{$var.Name}}_ptc_out_reg;
+{{end}}
+
+//outputs (controller to plant)
+{{range $index, $var := $block.OutputVars}}
+assign {{$var.Name}}_ctp_out = {{$var.Name}}_ctp_out_reg;
+{{end}}
+
+endmodule
+
+{{end}}
 `
 
 var verilogTemplateFuncMap = template.FuncMap{
