@@ -66,6 +66,7 @@ clean: clean_examples
 
 clean_examples:
 	rm -f example_*
+	rm -f ./example/*/F_*
 	rm -f ./example/*/*.h
 	rm -f ./example/*/*.v
 	rm -f ./example/*/*.sv
