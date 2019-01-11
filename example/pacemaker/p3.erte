@@ -16,11 +16,13 @@ policy p3 of p3 {
         
 		s0 {												
 			-> s1 on (VS || VP): v := 0;
+			-> s0 on !(VS || VP);
 		}
 
         s1 {
             -> s0 on (AS || AP);
             -> violation on (v > aeiTicks) recover AP := 1;
+			-> s1 on !(AS || AP) && v <= aeiTicks;
         }
 	}
 }
