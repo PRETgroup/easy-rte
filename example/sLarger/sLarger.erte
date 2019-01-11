@@ -1,0 +1,43 @@
+//A and B start at zero.
+//starting from zero, any A is allowed to be entered as long as it is >= a previous B or is zero
+//any B is allowed to be output as long as it is >= a previous A or is zero
+//A and B must alternate, starting A, and we cannot have both in the same tick
+function sLarger;
+interface of sLarger {
+	//in here means that they're going from PLANT to CONTROLLER
+	in bool R := 0;     //reset signal
+	in uint64_t A := 0;  
+
+	//out here means that they're going from CONTROLLER to PLANT
+	out uint64_t B := 0; 
+}
+
+policy p of sLarger {
+	internals {
+		dtimer_t v;
+		uint64_t largeA := 5;
+		uint64_t largeB := 5;
+	}
+
+	states {
+
+		
+		s0 {
+			-> violation on v > largeB: A := largeB;
+			-> violation on A > 0 && A < largeB recover A := largeB;
+			-> violation on B > 0 recover B := 0;
+			-> s1 on A >= largeB: largeA := A, v := 0;
+			-> s0 on A = 0;
+		}
+
+		s1 {
+			-> violation on v > largeA: B := largeA;
+			-> violation on A > 0 recover A := 0;
+			-> violation on B > 0 && B < largeA recover B := largeA;
+			-> s0 on B >= largeA: largeB := B, v := 0;
+			-> s1 on B = 0;
+		}
+
+		
+	}
+}

@@ -30,7 +30,7 @@ run_cbmc: default
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
 
 run_ebmc: default 
-	$(foreach file,$(wildcard example/$(PROJECT)/*.sv), time --format="took %E" ebmc $(file) --k-induction --trace --top F_combinatorialVerilog_$(word 2,$(subst _, ,$(basename $(notdir $(file)))));)
+	$(foreach file,$(wildcard example/$(PROJECT)/*.sv), time --format="took %E" ebmc $(file) --k-induction --trace --top F_combinatorialVerilog_$(word 3,$(subst _, ,$(basename $(notdir $(file)))));)
 	#time --format="took %E" ebmc example/$(PROJECT)/test_F_$(PROJECT).sv --k-induction --trace --module F_combinatorialVerilog_$(PROJECT)
 
 #convert $(PROJECT) into the C binary name
@@ -42,10 +42,10 @@ example/$(PROJECT)/F_$(PROJECT).c: easy-rte-c easy-rte-parser example/$(PROJECT)
 	./easy-rte-c -i example/$(PROJECT) -o example/$(PROJECT)
 
 #convert $(PROJECT)_V into the verilog names
-$(PROJECT)_V: example/$(PROJECT)/*.v
+$(PROJECT)_V: example/$(PROJECT)/*.sv
 
 #generate the Verilog sources from the erte files
-example/$(PROJECT)/*.v: default example/$(PROJECT)/*.erte
+example/$(PROJECT)/*.sv: default example/$(PROJECT)/*.erte
 	./easy-rte-parser -i example/$(PROJECT) -o example/$(PROJECT)
 	./easy-rte-c -i example/$(PROJECT) -o example/$(PROJECT) -l=verilog
 
