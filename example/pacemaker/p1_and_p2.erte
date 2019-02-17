@@ -1,0 +1,34 @@
+//P1: AP and VP cannot happen simultaneously.
+//P2: VS or VP must be true within AVI after an atrial event AS or AP.
+
+function p1_and_p2;
+interface of p1_and_p2 {
+	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
+	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p1_and_p2 of p1_and_p2 {
+	internals {
+		dtimer_t v;
+        uint16_t aviTicks := 1000;
+	}
+
+	states {
+
+        
+		s0 {												
+			-> s1 on (AS || AP) && !(AP && VP): v := 0;
+			-> s0 on !(AS || AP) && !(AP && VP);
+
+			-> violation on (AP && VP) recover VP := 0;
+		}
+
+        s1 {
+            -> s0 on (VS || VP) && !(AP && VP);
+			-> s1 on !(VS || VP) && v <= aviTicks && !(AP && VP);
+
+            -> violation on (v > aviTicks) recover VP := 1;
+			-> violation on (AP && VP) recover AP := 0;
+        }
+	}
+}
