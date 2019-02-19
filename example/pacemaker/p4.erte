@@ -20,6 +20,7 @@ policy p4 of p4 {
 
         s1 {
             -> s0 on (v > uriTicks);
+			
             -> violation on (VP) recover VP := 0;
 			-> s1 on (v <= uriTicks) && !VP;
         }

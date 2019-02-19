@@ -12,7 +12,7 @@ policy p1 of p1 {
 
 	states {
 		s0 {												
-			-> violation on (AP and VP);
+			-> violation on (AP and VP) recover VP := 0;
 
 			-> s0 on (!AP || !VP);
 		}

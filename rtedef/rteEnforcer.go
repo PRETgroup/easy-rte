@@ -506,25 +506,33 @@ func (p *Policy) GetPSTTransitions() ([]PSTTransition, error) {
 //into multiple transitions
 //it relies on the SplitExpressionsOnOr function below
 func SplitPSTTransitions(cTrans []PSTTransition) []PSTTransition {
-	brTrans := make([]PSTTransition, 0)
+	//SplitExpressionsOnOr has a BUG in it
+	//it is the case for NOT(A OR B) which was returning "NOT A" or "NOT B", which are not equivalent
+	//This means that this whole use case is borked
+	//as a result, we no longer split transitions
+	//This is of little consequence, as these were only used for auto-finding solutions, and we don't do that anymore
+	//(we use the recover keyword)
 
-	for i := 0; i < len(cTrans); i++ {
-		cTran := cTrans[i]
-		splitTrans := SplitExpressionsOnOr(cTran.STGuard)
-		for j := 0; j < len(splitTrans); j++ {
-			newTrans := PSTTransition{
-				PTransition: cTran.PTransition,
-			}
-			//recompile the condition
-			newTrans.PTransition.Condition = stconverter.STCompileExpression(splitTrans[len(splitTrans)-j-1])
-			newTrans.STGuard = splitTrans[len(splitTrans)-j-1]
+	// brTrans := make([]PSTTransition, 0)
 
-			brTrans = append(brTrans, newTrans)
-		}
-	}
+	// for i := 0; i < len(cTrans); i++ {
+	// 	cTran := cTrans[i]
+	// 	splitTrans := SplitExpressionsOnOr(cTran.STGuard)
+	// 	for j := 0; j < len(splitTrans); j++ {
+	// 		newTrans := PSTTransition{
+	// 			PTransition: cTran.PTransition,
+	// 		}
+	// 		//recompile the condition
+	// 		newTrans.PTransition.Condition = stconverter.STCompileExpression(splitTrans[len(splitTrans)-j-1])
+	// 		newTrans.STGuard = splitTrans[len(splitTrans)-j-1]
+
+	// 		brTrans = append(brTrans, newTrans)
+	// 	}
+	// }
 
 	//reformat all the guards based off the transactions
-	return brTrans
+	//return brTrans
+	return cTrans
 }
 
 //SplitExpressionsOnOr will take a given STExpression and return a slice of STExpressions which are
