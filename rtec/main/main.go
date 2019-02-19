@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
@@ -12,16 +11,13 @@ import (
 )
 
 var (
-	inFileName  = flag.String("i", "", "Specifies the name of the source file or directory of xml-type files to be compiled.")
+	inFileName  = flag.String("i", "", "Specifies the name of the source xml file to be compiled.")
 	outLocation = flag.String("o", "", "Specifies the name of the directory to put output files. If blank, uses current directory")
 	language    = flag.String("l", "c", "The output language")
 )
 
 func main() {
 	flag.Parse()
-
-	*inFileName = strings.TrimSuffix(*inFileName, "/")
-	*inFileName = strings.TrimSuffix(*inFileName, "\\")
 
 	*outLocation = strings.TrimSuffix(*outLocation, "/")
 	*outLocation = strings.TrimSuffix(*outLocation, "\\")
@@ -32,11 +28,11 @@ func main() {
 
 	}
 
-	fileInfo, err := os.Stat(*inFileName)
-	if err != nil {
-		fmt.Println("Error reading file statistics:", err.Error())
-		return
-	}
+	// fileInfo, err := os.Stat(*inFileName)
+	// if err != nil {
+	// 	fmt.Println("Error reading file statistics:", err.Error())
+	// 	return
+	// }
 
 	conv, err := rtec.New(*language)
 	if err != nil {
@@ -44,44 +40,54 @@ func main() {
 		return
 	}
 
-	var xmlFileNames []string
+	//var xmlFileNames []string
 
-	if fileInfo.IsDir() {
-		fmt.Println("Running in Dir mode")
-		files, err := ioutil.ReadDir(*inFileName)
-		if err != nil {
-			log.Fatal(err)
-		}
+	// if fileInfo.IsDir() {
+	// 	fmt.Println("Running in Dir mode")
+	// 	files, err := ioutil.ReadDir(*inFileName)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
 
-		for _, file := range files {
-			//only read the .fbt and .res files
-			name := file.Name()
-			nameComponents := strings.Split(name, ".")
-			extension := nameComponents[len(nameComponents)-1]
-			if extension == "xml" {
-				xmlFileNames = append(xmlFileNames, name)
-			}
-		}
-	} else {
-		fmt.Println("Running in Single mode")
-		xmlFileNames = append(xmlFileNames, *inFileName)
+	// 	for _, file := range files {
+	// 		//only read the .fbt and .res files
+	// 		name := file.Name()
+	// 		nameComponents := strings.Split(name, ".")
+	// 		extension := nameComponents[len(nameComponents)-1]
+	// 		if extension == "xml" {
+	// 			xmlFileNames = append(xmlFileNames, name)
+	// 		}
+	// 	}
+	// } else {
+	//	fmt.Println("Running in Single mode")
+	// 	xmlFileNames = append(xmlFileNames, *inFileName)
+	// }
+
+	// for _, name := range xmlFileNames {
+	// 	sourceFile, err := ioutil.ReadFile(fmt.Sprintf("%s%c%s", *inFileName, os.PathSeparator, name))
+	// 	if err != nil {
+	// 		fmt.Printf("Error reading file '%s' for conversion: %s\n", name, err.Error())
+	// 		return
+	// 	}
+
+	// 	err = conv.AddFunction(sourceFile)
+	// 	if err != nil {
+	// 		fmt.Printf("Error during adding file '%s' for conversion: %s\n", name, err.Error())
+	// 		return
+	// 	}
+	// }
+
+	sourceFile, err := ioutil.ReadFile(*inFileName)
+	if err != nil {
+		fmt.Printf("Error reading file '%s' for conversion: %s\n", *inFileName, err.Error())
+		return
 	}
 
-	for _, name := range xmlFileNames {
-		sourceFile, err := ioutil.ReadFile(fmt.Sprintf("%s%c%s", *inFileName, os.PathSeparator, name))
-		if err != nil {
-			fmt.Printf("Error reading file '%s' for conversion: %s\n", name, err.Error())
-			return
-		}
-
-		err = conv.AddFunction(sourceFile)
-		if err != nil {
-			fmt.Printf("Error during adding file '%s' for conversion: %s\n", name, err.Error())
-			return
-		}
+	err = conv.AddFunction(sourceFile)
+	if err != nil {
+		fmt.Printf("Error during adding file '%s' for conversion: %s\n", *inFileName, err.Error())
+		return
 	}
-
-	fmt.Println("Found", len(conv.Funcs), "functions")
 
 	outputs, err := conv.ConvertAll()
 	if err != nil {
