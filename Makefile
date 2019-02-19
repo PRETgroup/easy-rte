@@ -1,7 +1,10 @@
 .PHONY: default c_enf verilog_enf $(PROJECT) c_build
 
 # run this makefile with the following options
-# make [c_enf] [c_build] [run_cbmc] PROJECT=XXXXX
+# make [c_enf] [c_build] [run_(c/e)bmc] PROJECT=XXXXX FILE=YYYYY
+#   PROJECT = name of project directory
+#   FILE    = name of file within project directory (default = PROJECT, e.g. example/ab5/ab5.whatever)
+#
 #   c_enf: make a C enforcer for the project
 #   c_build: compile the C enforcer with a main file (this will need to be provided manually)
 #   run_cbmc: check the compiled C enforcer to ensure correctness
@@ -9,6 +12,8 @@
 # make [verilog_enf] [run_ebmc] PROJECT=XXXXX
 #   verilog_enf: make a Verilog enforcer for the project
 #   run_ebmc: check the compiled Verilog enforcer to ensure correctness
+
+FILE ?= $(PROJECT)
 
 default: easy-rte-c easy-rte-parser
 
@@ -30,19 +35,19 @@ run_cbmc: default
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
 
 run_ebmc: default 
-	$(foreach file,$(wildcard example/$(PROJECT)/*.sv), time --format="took %E" ebmc $(file) --k-induction --trace --top F_combinatorialVerilog_$(word 3,$(subst _, ,$(basename $(notdir $(file)))));)
-	#time --format="took %E" ebmc example/$(PROJECT)/test_F_$(PROJECT).sv --k-induction --trace --module F_combinatorialVerilog_$(PROJECT)
+	#$(foreach file,$(wildcard example/$(PROJECT)/*.sv), time --format="took %E" ebmc $(file) --k-induction --trace --top F_combinatorialVerilog_$(word 3,$(subst _, ,$(basename $(notdir $(file)))));)
+	time --format="took %E" ebmc example/$(PROJECT)/test_F_$(FILE).sv --k-induction --trace --module F_combinatorialVerilog_$(FILE)
 	#ebmc $^ --k-induction --trace
 
 #convert $(PROJECT) into the C binary name
-$(PROJECT): ./example/$(PROJECT)/$(PROJECT).c
+$(PROJECT): ./example/$(PROJECT)/$(FILE).c
 
 #generate the C sources from the erte files
 %.c: %.xml
 	./easy-rte-c -i $^ -o example/$(PROJECT)
 
 #convert $(PROJECT)_V into the verilog names
-$(PROJECT)_V: ./example/$(PROJECT)/$(PROJECT).sv
+$(PROJECT)_V: ./example/$(PROJECT)/$(FILE).sv
 
 #generate the xml from the erte files
 %.xml: %.erte
