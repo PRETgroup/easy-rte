@@ -1,0 +1,70 @@
+//P1: AP and VP cannot happen simultaneously.
+//P2: VS or VP must be true within AVI after an atrial event AS or AP.
+//P3: AS or AP must be true within AEI after a ventricular event VS or VP.
+//P4: After a ventricular event VS or VP, another ventricular event can happen only after URI.
+//P5: After a ventricular event VS or VP, another ventricular event should happen within LRI.
+
+function p1p2p3p4p5;
+interface of p1p2p3p4p5 {
+	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
+	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p1p2p3p4p5 of p1p2p3p4p5 {
+	internals {
+		dtimer_t v;
+		dtimer_t vevent;
+        constant uint16_t aviTicks := 300;
+        constant uint16_t aeiTicks := 800;
+        constant uint16_t uriTicks := 900;
+		constant uint16_t lriTicks := 950;
+	}
+
+	states {
+
+        init {	
+			-> pre_ASAP on (VS || VP) && !(AP && VP): v := 0, vevent := 0;
+			-> pre_VSVP on (AS || AP) && !(AP && VP): v := 0, vevent := 0;
+			-> init on !(VS || VP) && !(AS || AP) && !(AP && VP);
+
+			-> violation on (AP && VP) recover VP := 0;
+		}
+
+		//wait for an AS || AP, should come before AEI ticks
+		//ensure no AP && VP at same time
+		pre_ASAP {												
+			-> pre_VSVP_pre_URI on (AS || AP) && !(AP && VP): v := 0;
+			-> pre_ASAP on !(AS || AP) && v <= aeiTicks && !(AP && VP);
+
+			-> violation on (v > aeiTicks) recover AP := 1;
+			-> violation on (AP && VP) recover VP := 0;
+
+		}
+
+		//wait for uriTicks to pass and then go to pre_VSVP (or pre_ASAP if it arrives exactly on the boundary)
+		//ensure no AP && VP at the same time
+		//p4 will always elapse before v, as AEI+AVI is the maximum time between VS/VP, 
+		//and URI is the minimum time
+		//hence in this state we ignore v
+		pre_VSVP_pre_URI {
+			-> pre_VSVP on !VP && vevent > uriTicks && !(AP && VP);
+			-> pre_ASAP on (VS || VP) && vevent > uriTicks && !(AP && VP): vevent := 0, v := 0;
+			-> pre_ASAP on (VS && !VP) && !(AP && VP): vevent := 0, v := 0;
+			-> pre_VSVP_pre_URI on !(VS || VP) && vevent <= uriTicks && !(AP && VP);
+
+			-> violation on (AP && VP) recover AP := 0;
+			-> violation on (VP) && vevent <= uriTicks recover VP := 0;
+		}
+
+		//wait for a VS || VP, should come before AVI ticks and before LRI ticks
+		//ensure no AP && VP at the same time
+        pre_VSVP {
+            -> pre_ASAP on (VS || VP) && !(AP && VP): vevent := 0;
+			-> pre_VSVP on !(VS || VP) && v <= aviTicks && vevent <= lriTicks && !(AP && VP);
+
+            -> violation on (v > aviTicks) recover VP := 1;
+			-> violation on (v > lriTicks) recover VP := 1;
+			-> violation on (AP && VP) recover AP := 0;
+        }
+	}
+}

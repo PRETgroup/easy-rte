@@ -8,7 +8,7 @@ interface of p4 {
 policy p4 of p4 {
 	internals {
 		dtimer_t v;
-        uint16_t uriTicks := 1000;
+        constant uint16_t uriTicks := 1000;
 	}
 
 	states {

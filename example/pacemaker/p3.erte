@@ -8,7 +8,7 @@ interface of p3 {
 policy p3 of p3 {
 	internals {
 		dtimer_t v;
-        uint16_t aeiTicks := 1000;
+        constant uint16_t aeiTicks := 1000;
 	}
 
 	states {

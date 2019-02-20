@@ -8,7 +8,7 @@ interface of p2 {
 policy p2 of p2 {
 	internals {
 		dtimer_t v;
-        uint16_t aviTicks := 1000;
+        constant uint16_t aviTicks := 1000;
 	}
 
 	states {

@@ -7,7 +7,7 @@ interface of p1 {
 
 policy p1 of p1 {
 	internals {
-		dtimer_t v;
+
 	}
 
 	states {

@@ -1,0 +1,47 @@
+//P1: AP and VP cannot happen simultaneously.
+//P2: VS or VP must be true within AVI after an atrial event AS or AP.
+//P3: AS or AP must be true within AEI after a ventricular event VS or VP.
+
+function p1p2p3;
+interface of p1p2p3 {
+	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
+	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p1p2p3 of p1p2p3 {
+	internals {
+		dtimer_t v;
+        constant uint16_t aviTicks := 1000;
+        constant uint16_t aeiTicks := 1000;
+	}
+
+	states {
+
+        init {	
+			-> post_VSVP on (VS || VP): v := 0;
+			-> post_ASAP on (AS || AP): v := 0;
+			-> init on !(VS || VP) && !(AS || AP);
+		}
+
+		//wait for an AS || AP, should come before AEI ticks
+		//ensure no AP && VP at same time
+		post_VSVP {												
+			-> post_ASAP on (AS || AP) && !(AP && VP): v := 0;
+			-> post_VSVP on !(AS || AP) && v <= aeiTicks && !(AP && VP);
+
+			-> violation on (v > aeiTicks) recover AP := 1;
+			-> violation on (AP && VP) recover VP := 0;
+
+		}
+
+		//wait for a VS || VP, should come before AVI ticks
+		//ensure no AP && VP at the same time
+        post_ASAP {
+            -> post_VSVP on (VS || VP) && !(AP && VP);
+			-> post_ASAP on !(VS || VP) && v <= aviTicks && !(AP && VP);
+
+            -> violation on (v > aviTicks) recover VP := 1;
+			-> violation on (AP && VP) recover AP := 0;
+        }
+	}
+}

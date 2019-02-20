@@ -1,16 +1,16 @@
 //P1: AP and VP cannot happen simultaneously.
 //P2: VS or VP must be true within AVI after an atrial event AS or AP.
 
-function p1_and_p2;
-interface of p1_and_p2 {
+function p1p2;
+interface of p1p2 {
 	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
 	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
 }
 
-policy p1_and_p2 of p1_and_p2 {
+policy p1p2 of p1p2 {
 	internals {
 		dtimer_t v;
-        uint16_t aviTicks := 1000;
+        constant uint16_t aviTicks := 1000;
 	}
 
 	states {

@@ -128,7 +128,7 @@ module F_combinatorialVerilog_{{$block.Name}} (
 {{getVerilogType $var.Type}} {{$var.Name}} {{if $var.InitialValue}}/* = {{$var.InitialValue}}*/{{end}};
 {{end}}{{range $polI, $pol := $block.Policies}}
 {{$pfbEnf := getPolicyEnfInfo $block $polI}}{{if not $pfbEnf}}//Policy is broken!{{else}}//internal vars
-{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if $var.Constant}}localparam {{$var.Name}} = {{$var.InitialValue}}{{else}}{{getVerilogType $var.Type}} {{$var.Name}}{{if $var.InitialValue}}/* = {{$var.InitialValue}}*/{{end}}{{end}};
+{{range $vari, $var := $pfbEnf.OutputPolicy.InternalVars}}{{if $var.Constant}}wire {{getVerilogWidthArrayForType $var.Type}} {{$var.Name}} = {{$var.InitialValue}}{{else}}{{getVerilogType $var.Type}} {{$var.Name}}{{if $var.InitialValue}}/* = {{$var.InitialValue}}*/{{end}}{{end}};
 {{end}}{{end}}{{end}}
 
 //For each policy, we need a reg for the state machine
