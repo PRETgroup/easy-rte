@@ -63,7 +63,7 @@ policy p1p2p3p4p5 of p1p2p3p4p5 {
 			-> pre_VSVP on !(VS || VP) && v <= aviTicks && vevent <= lriTicks && !(AP && VP);
 
             -> violation on (v > aviTicks) recover VP := 1;
-			-> violation on (v > lriTicks) recover VP := 1;
+			-> violation on (vevent > lriTicks) recover VP := 1;
 			-> violation on (AP && VP) recover AP := 0;
         }
 	}
