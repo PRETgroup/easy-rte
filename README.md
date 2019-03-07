@@ -293,3 +293,7 @@ Automatically deriving a solution for violation transition
 We can see then that the autogeneration of solutions is correct here, as it has decided that if `driveY < minSpeed` then the correct rectifying behaviour is to make `driveY = minSpeed` (which is correct).
 
 Running this example will show that the robot eventually drives its way to the desired location eventually, despite the controller presenting unsafe outputs (drive values too large) and the desired location being set off the table.
+
+## Combining policies (Experimental)
+
+`make verilog_enf run_ebmc PROJECT=pacemaker FILE=p1_and_p2 PARSEARGS=-product`
