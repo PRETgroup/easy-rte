@@ -1,0 +1,88 @@
+//P1: AP and VP cannot happen simultaneously.
+//P2: VS or VP must be true within AVI after an atrial event AS or AP.
+//P3: AS or AP must be true within AEI after a ventricular event VS or VP.
+//P4: After a ventricular event, another ventricular event can happen only after URI.
+function p1_and_p2_and_p3_and_p4;
+interface of p1_and_p2_and_p3_and_p4 {
+	in bool AS, VS;  //in here means that they're going from PLANT to CONTROLLER
+	out bool AP, VP; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy p1 of p1_and_p2_and_p3_and_p4 {
+
+	states {
+		s0 {												
+			-> violation on (AP and VP) recover VP := 0;
+
+			-> s0 on (!AP || !VP);
+		}
+	}
+}
+
+policy p2 of p1_and_p2_and_p3_and_p4 {
+	internals {
+		dtimer_t v;
+        constant uint16_t aviTicks := 1000;
+	}
+
+	states {
+
+        
+		s0 {												
+			-> s1 on (AS || AP): v := 0;
+			-> s0 on !(AS || AP);
+		}
+
+        s1 {
+            -> s0 on (VS || VP);
+            -> violation on (v > aviTicks) recover VP := 1;
+			-> s1 on !(VS || VP) && v <= aviTicks;
+        }
+	}
+}
+
+
+policy p3 of p1_and_p2_and_p3_and_p4 {
+	internals {
+		dtimer_t v2;
+        constant uint16_t aeiTicks := 1000;
+	}
+
+	states {
+
+        
+		s0 {												
+			-> s1 on (VS || VP): v2 := 0;
+			-> s0 on !(VS || VP);
+		}
+
+        s1 {
+            -> s0 on (AS || AP);
+            -> violation on (v2 > aeiTicks) recover AP := 1;
+			-> s1 on !(AS || AP) && v2 <= aeiTicks;
+        }
+	}
+}
+
+policy p4 of p1_and_p2_and_p3_and_p4 {
+	internals {
+		dtimer_t v3;
+        constant uint16_t uriTicks := 900;
+	}
+
+	states {
+
+		s0 {												
+			-> s1 on (VS || VP): v3 := 0;
+			-> s0 on !(VS || VP);
+		}
+
+        s1 {
+            -> s0 on (v3 > uriTicks);
+			
+            -> violation on (VP) recover VP := 0;
+			-> s1 on (v3 <= uriTicks) && !VP;
+        }
+	}
+}
+

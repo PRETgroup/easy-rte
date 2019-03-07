@@ -100,6 +100,23 @@ func getPolicyEnfInfo(function rtedef.EnforcedFunction, policyIndex int) *rtedef
 	return enfPol
 }
 
+//getAllPolicyEnfInfo will get a PEnforcer for a given policy
+func getAllPolicyEnfInfo(function rtedef.EnforcedFunction) []rtedef.PEnforcer {
+	pols := make([]rtedef.PEnforcer, 0, len(function.Policies))
+	for i := 0; i < len(function.Policies); i++ {
+		enfPol, err := rtedef.MakePEnforcer(function.InterfaceList, function.Policies[i])
+		if err != nil {
+			return nil
+		}
+		pols = append(pols, *enfPol)
+	}
+
+	//Uncomment these two lines to generate the intermediate enforcer JSON file
+	//bytes, _ := json.MarshalIndent(enfPol, "", "\t")
+	//ioutil.WriteFile(function.Name+".json", bytes, 0644)
+	return pols
+}
+
 func sub(a, b int) int {
 	return a - b
 }
