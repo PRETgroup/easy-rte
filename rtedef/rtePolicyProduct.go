@@ -80,6 +80,7 @@ func (ef EnforcedFunction) PolicyProduct(polA Policy, polB Policy) (Policy, erro
 	if err != nil {
 		return Policy{}, err
 	}
+	//out:
 	for i := 0; i < len(polAPSTTrans); i++ {
 		for j := 0; j < len(polBPSTTrans); j++ {
 
@@ -89,23 +90,27 @@ func (ef EnforcedFunction) PolicyProduct(polA Policy, polB Policy) (Policy, erro
 			}
 			source := polAPSTTrans[i].Source + "_comma_" + polBPSTTrans[j].Source
 
-			if polAPSTTrans[i].Destination == "violation" {
-				polProduct.Transitions = append(polProduct.Transitions, PTransition{
-					Source:      source,
-					Destination: "violation",
-					Condition:   stconverter.STCompileExpression(polAPSTTrans[i].STGuard),
-					Expressions: polAPSTTrans[i].Expressions,
-					Recover:     polAPSTTrans[i].Recover,
-				})
-			} else if polBPSTTrans[j].Destination == "violation" {
-				polProduct.Transitions = append(polProduct.Transitions, PTransition{
-					Source:      source,
-					Destination: "violation",
-					Condition:   stconverter.STCompileExpression(polBPSTTrans[j].STGuard),
-					Expressions: polBPSTTrans[j].Expressions,
-					Recover:     polBPSTTrans[j].Recover,
-				})
-
+			if polAPSTTrans[i].Destination == "violation" || polBPSTTrans[j].Destination == "violation" {
+				if polAPSTTrans[i].Destination == "violation" {
+					polProduct.Transitions = append(polProduct.Transitions, PTransition{
+						Source:      source,
+						Destination: "violation",
+						Condition:   stconverter.STCompileExpression(polAPSTTrans[i].STGuard),
+						Expressions: polAPSTTrans[i].Expressions,
+						Recover:     polAPSTTrans[i].Recover,
+					})
+					//continue out
+				}
+				if polBPSTTrans[j].Destination == "violation" {
+					polProduct.Transitions = append(polProduct.Transitions, PTransition{
+						Source:      source,
+						Destination: "violation",
+						Condition:   stconverter.STCompileExpression(polBPSTTrans[j].STGuard),
+						Expressions: polBPSTTrans[j].Expressions,
+						Recover:     polBPSTTrans[j].Recover,
+					})
+					continue
+				}
 			} else {
 				destination := polAPSTTrans[i].Destination + "_comma_" + polBPSTTrans[j].Destination
 				polProduct.Transitions = append(polProduct.Transitions, PTransition{
