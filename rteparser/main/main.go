@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/PRETgroup/easy-rte/rtedef"
+
 	"github.com/PRETgroup/easy-rte/rteparser"
 )
 
 var (
-	inFileName  = flag.String("i", "", "Specifies the name of the source file (.erte) file to be compiled.")
-	outFileName = flag.String("o", "out.xml", "Specifies the name of the output file (.erte.xml) files.")
+	inFileName    = flag.String("i", "", "Specifies the name of the source file (.erte) file to be compiled.")
+	outFileName   = flag.String("o", "out.xml", "Specifies the name of the output file (.erte.xml) files.")
+	policyProduct = flag.Bool("product", false, "(Experimental) Set this to true to take the product of all specified policies rather than executing them in sequence")
 )
 
 var (
@@ -92,6 +95,20 @@ func main() {
 	for _, fun := range mfbs {
 		for i := 0; i < len(fun.Policies); i++ {
 			fun.Policies[i].SortTransitionsViolationsToEnd()
+		}
+
+		if *policyProduct {
+			if len(fun.Policies) > 1 {
+				finalPolicy := fun.Policies[0]
+				for i := 1; i < len(fun.Policies); i++ {
+					finalPolicy, err = fun.PolicyProduct(finalPolicy, fun.Policies[i])
+					if err != nil {
+						fmt.Printf("Error taking product of policies in '%s': %s\n", *inFileName, parseErr.Error())
+						return
+					}
+				}
+				fun.Policies = []rtedef.Policy{finalPolicy}
+			}
 		}
 
 		// name := fun.Name

@@ -1,4 +1,5 @@
 .PHONY: default c_enf verilog_enf $(PROJECT) c_build
+.PRECIOUS: %.xml 
 
 # run this makefile with the following options
 # make [c_enf] [c_build] [run_(c/e)bmc] PROJECT=XXXXX FILE=YYYYY
@@ -14,6 +15,7 @@
 #   run_ebmc: check the compiled Verilog enforcer to ensure correctness
 
 FILE ?= $(PROJECT)
+PARSEARGS ?=
 
 default: easy-rte-c easy-rte-parser
 
@@ -51,7 +53,7 @@ $(PROJECT)_V: ./example/$(PROJECT)/$(FILE).sv
 
 #generate the xml from the erte files
 %.xml: %.erte
-	./easy-rte-parser -i $^ -o $@
+	./easy-rte-parser $(PARSEARGS) -i $^ -o $@
 
 #generate the Verilog sources from the xml files
 %.sv: %.xml
