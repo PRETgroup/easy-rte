@@ -80,9 +80,9 @@ policy p4 of p1_and_p2_and_p3_and_p4_and_p5 {
 
         s1 {
             -> s0 on (v3 > uriTicks);
-			
-            -> violation on (VP) recover VP := 0;
 			-> s1 on (v3 <= uriTicks) && !VP;
+
+            -> violation on (VP) recover VP := 0;
         }
 	}
 }
@@ -105,7 +105,7 @@ policy p5 of p1_and_p2_and_p3_and_p4_and_p5 {
       s1 {
             -> s1 on (VS || VP): v4 := 0;
 			-> s1 on !(VS || VP) && v4 <= lriTicks;
-            //-> s1 on 1;
+
 			-> violation on (v4 > lriTicks) recover VP := 1;
         }
 	}
