@@ -303,8 +303,7 @@ Running this example will show that the robot eventually drives its way to the d
 assert property (p1_and_p2_and_p3_and_p4_and_p5_policy_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_state_in >= `POLICY_STATE_p1_and_p2_and_p3_and_p4_and_p5_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_violation || 
 	p1_and_p2_and_p3_and_p4_and_p5_policy_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_state_out != `POLICY_STATE_p1_and_p2_and_p3_and_p4_and_p5_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_violation ||
 	v3_in > v4_in ||
-	v4_in > 951 ||
-	v3_in > 851 ||
-	v_in > v2_in);
+	v4_in > v3_in + 49 ||
+	((v3_in > 900) + (v4_in > 949) > 1));
 
 	ebmc example/pacemaker/test_F_p1_and_p2_and_p3_and_p4_and_p5.sv --k-induction --trace --module F_combinatorialVerilog_p1_and_p2_and_p3_and_p4_and_p5

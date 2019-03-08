@@ -64,6 +64,7 @@ policy p3 of p1_and_p2_and_p3_and_p4_and_p5 {
 	}
 }
 
+//P4: After a ventricular event, another ventricular event can happen only after URI.
 policy p4 of p1_and_p2_and_p3_and_p4_and_p5 {
 	internals {
 		dtimer_t v3;
