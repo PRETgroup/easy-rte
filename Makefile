@@ -1,5 +1,5 @@
 .PHONY: default c_enf verilog_enf $(PROJECT) c_build
-#.PRECIOUS: %.xml 
+.PRECIOUS: %.xml 
 
 # run this makefile with the following options
 # make [c_enf] [c_build] [run_(c/e)bmc] PROJECT=XXXXX FILE=YYYYY

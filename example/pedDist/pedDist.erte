@@ -1,0 +1,31 @@
+function pedDist;
+interface of pedDist {
+	//in here means that they're going from PLANT to CONTROLLER
+	in uint16_t P;  
+
+	//out here means that they're going from CONTROLLER to PLANT
+	out float B;
+}
+
+policy p of pedDist {
+	internals {
+		dtimer_t t;
+	}
+
+	states {
+
+		
+		l_safe {
+			-> l_safe on P > 100: t := 0;
+			-> l_brake on P <= 100: t := 0;
+		}
+
+		l_brake {
+			-> l_brake on (P <= 100 && B >= ((100 - P) / 100)) || (P > 100 && t < 10);
+			-> l_safe on P > 100 && t >= 10;
+			-> violation on P <= 100 && B < ((100 - P) / 100) recover B := ((100 - P) / 100);
+		}
+
+		
+	}
+}
