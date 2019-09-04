@@ -163,6 +163,17 @@ void {{$block.Name}}_run_input_enforcer_{{$pol.Name}}(enforcervars_{{$block.Name
 //This function is provided in "F_{{$block.Name}}.c"
 //It will run the input enforcer for {{$block.Name}}'s policy {{$pol.Name}}
 void {{$block.Name}}_run_output_enforcer_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me, inputs_{{$block.Name}}_t* inputs, outputs_{{$block.Name}}_t* outputs);
+
+//This function is provided in "F_{{$block.Name}}.c"
+//It will check the state of the enforcer monitor code
+//It returns one of the following:
+//0: currently true (safe)
+//1: always true (safe)
+//-1: currently false (unsafe)
+//-2: always false (unsafe)
+//It will need to do some reachability analysis to achieve this
+int {{$block.Name}}_check_rv_status_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me);
+
 {{end}}
 {{end}}
 
@@ -208,6 +219,18 @@ void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs
 
 {{if $block.Policies}}{{template "_policyOut" $block}}{{end}}
 
+//This function is provided in "F_{{$block.Name}}.c"
+//It will check the state of the enforcer monitor code
+//It returns one of the following:
+//0: currently true (safe)
+//1: always true (safe)
+//-1: currently false (unsafe)
+//-2: always false (unsafe)
+//It will need to do some reachability analysis to achieve this
+int {{$block.Name}}_check_rv_status_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me) {
+	//TODO: this function
+	return -2;
+}
 {{end}}
 {{define "mainCBMCC"}}{{$block := index .Functions .FunctionIndex}}{{$blocks := .Functions}}
 //This file should be called cbmc_main_{{$block.Name}}.c
