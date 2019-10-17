@@ -227,10 +227,10 @@ void {{$block.Name}}_run_via_enforcer(enforcervars_{{$block.Name}}_t* me, inputs
 //-1: currently false (unsafe)
 //-2: always false (unsafe)
 //It will need to do some reachability analysis to achieve this
-int {{$block.Name}}_check_rv_status_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me) {
+{{/*int {{$block.Name}}_check_rv_status_{{$pol.Name}}(enforcervars_{{$block.Name}}_t* me) {
 	//TODO: this function
 	return -2;
-}
+}*/}}
 {{end}}
 {{define "mainCBMCC"}}{{$block := index .Functions .FunctionIndex}}{{$blocks := .Functions}}
 //This file should be called cbmc_main_{{$block.Name}}.c
