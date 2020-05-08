@@ -27,6 +27,7 @@ verilog_enf: $(PROJECT)_V
 
 easy-rte-c: rtec/* rtedef/*
 	go get github.com/PRETgroup/goFB/goFB
+	go get github.com/PRETgroup/easy-rte/rtec
 	go build -o easy-rte-c -i ./rtec/main
 
 easy-rte-parser: rteparser/* rtedef/*
