@@ -1,13 +1,15 @@
 # easy-rte
 
 ## About
-This project provides an easy-to-use implementation of _bi-directional Runtime Enforcement_, based on the semantics originally presented in [Runtime Enforcement of Cyber-Physical Systems](https://dl-acm-org.ezproxy.auckland.ac.nz/citation.cfm?id=3126500) (ACM Transactions on Embedded Computing Systems (TECS) 2017).
+This project provides an easy-to-use implementation of _bi-directional Runtime Enforcement_. It is the toolchain used in the paper [Smart I/O modules for mitigation of cyber-physical attacks](https://ieeexplore.ieee.org/abstract/document/8859335) (IEEE Transactions on Industrial Informatics (TII) 2020). 
 
+We ensure we are correct via formal proof and via the use of the CBMC and EBMC model checkers.
+
+Easy-rte extends the boolean semantics originally presented in [Runtime Enforcement of Cyber-Physical Systems](https://dl-acm-org.ezproxy.auckland.ac.nz/citation.cfm?id=3126500) (ACM Transactions on Embedded Computing Systems (TECS) 2017). 
 While the original implementation was restricted to simple _boolean_ arguments only, and was implemented in Python for use 
 with SCCharts, this project presents a more generalised any-type enforcement system, which can be used with any C project. 
-_easy-rte_ was ported from [goFB](https://github.com/PRETgroup/goFB), which implemented the semantics in this way, but restricted them for use with IEC 61499 function blocks.
 
-We ensure we are correct via proofs available (in a paper yet to be published), and via the use of the CBMC and EBMC model checkers.
+_easy-rte_ was ported from [goFB](https://github.com/PRETgroup/goFB).
 
 ## What is Runtime Enforcement?
 
@@ -297,12 +299,3 @@ Running this example will show that the robot eventually drives its way to the d
 ## Combining policies (Experimental)
 
 `make verilog_enf run_ebmc PROJECT=pacemaker FILE=p1_and_p2 PARSEARGS=-product`
-
-## temporary clipboard
-
-assert property (p1_and_p2_and_p3_and_p4_and_p5_policy_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_state_in >= `POLICY_STATE_p1_and_p2_and_p3_and_p4_and_p5_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_violation || 
-	p1_and_p2_and_p3_and_p4_and_p5_policy_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_state_out != `POLICY_STATE_p1_and_p2_and_p3_and_p4_and_p5_Product_of_Product_of_Product_of_Product_of_p1_and_p2_and_p3_and_p4_and_p5_violation ||
-	v3_in != v4_in ||
-	((v3_in > 900) + (v4_in > 949) > 1));
-
-	ebmc example/pacemaker/test_F_p1_and_p2_and_p3_and_p4_and_p5.sv --k-induction --trace --module F_combinatorialVerilog_p1_and_p2_and_p3_and_p4_and_p5
