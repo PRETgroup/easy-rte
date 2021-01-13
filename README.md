@@ -1,7 +1,7 @@
 # easy-rte
 
 ## About
-This project provides an easy-to-use implementation of _bi-directional Runtime Enforcement_. It is the toolchain used in the paper [Smart I/O modules for mitigation of cyber-physical attacks](https://ieeexplore.ieee.org/abstract/document/8859335) (IEEE Transactions on Industrial Informatics (TII) 2020). 
+This project provides an easy-to-use implementation of _bi-directional Runtime Enforcement_. It is the toolchain used in the paper [Smart I/O Modules for Mitigating Cyber-Physical Attacks on Industrial Control Systems](https://ieeexplore.ieee.org/abstract/document/8859335) (IEEE Transactions on Industrial Informatics (TII) 2020). 
 
 We ensure we are correct via formal proof and via the use of the CBMC and EBMC model checkers.
 
