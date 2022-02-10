@@ -1,0 +1,27 @@
+function px;
+interface of px {
+	in uint8_t x;
+	out bool x_accel, x_hold; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy px of px {
+	internals {
+		constant uint8_t max_x := 10; 
+	}
+
+	states {
+        
+		l0 {												
+			-> l0 on (x < max_x || (!x_accel && x >= max_x));
+			-> l1 on (!x_accel && x_hold && x <= max_x);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+		}
+
+		l1 {												
+			-> l1 on (x_hold && x <= 10);
+			//-> l0 on (x < max_x || (!x_accel && x >= max_x));
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+		}
+
+	}
+}

@@ -1,0 +1,324 @@
+function px_py_pz_pr;
+interface of px_py_pz_pr {
+	in uint8_t x, y, z;
+	in uint16_t rpm;
+	out bool x_accel, x_hold, y_accel, y_hold, z_accel, z_hold, rpm_up, rpm_hold; //out here means that they're going from CONTROLLER to PLANT
+}
+
+policy px_py_pz_pr of px_py_pz_pr {
+	internals {
+		constant uint8_t max_x := 10; 
+		constant uint8_t max_y := 10; 
+		constant uint8_t max_z := 10; 
+		constant uint16_t max_rpm := 1250; 
+	}
+
+	states {
+        
+		l0l2l4l6 {												
+			-> l0l2l4l6 on (x < max_x || (!x_accel && x >= max_x));
+			-> l0l2l4l6 on (y < max_y || (!y_accel && x >= max_y));
+			-> l0l2l4l6 on (z < max_z || (!z_accel && x >= max_z));
+			-> l0l2l4l6 on (rpm < max_rpm || (!rpm_up && rpm >= max_rpm));
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+
+		l1l2l4l6 {		// hold x										
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l0l3l4l6 {		// hold y									
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l0l2l5l6 {		// hold z									
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l0l2l4l7 {		// hold rpm									
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l1l3l4l6 {		// hold x & y	
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l1l3l4l7 {		// hold x & y & rpm
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l1l2l5l6 {		// hold x & z									
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l1l2l5l7 {		// hold x & z & rpm									
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l0l3l5l6 {		// hold y & z									
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l0l3l5l7 {		// hold y & z & rpm								
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l1l2l4l7 {		// hold x and rpm	
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l4l7 on (!x_accel && x_hold && x <= max_x && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l4l7 on (!y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l2l5l7 on (!z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l0l3l4l7 {		// hold y and rpm
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l4l7 on (!x_accel && x_hold && x <= max_x && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l4l7 on (!y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l2l5l7 on (!z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l0l2l5l7 {		// hold z and rpm
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l4l7 on (!x_accel && x_hold && x <= max_x && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l4l7 on (!y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l2l5l7 on (!z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l1l3l5l6 {		// hold x & y & z								
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+		l1l3l5l7 {		// hold x & y & z & rpm								
+			-> l1l2l4l6 on (!x_accel && x_hold && x <= max_x);
+			-> l0l3l4l6 on (!y_accel && y_hold && y <= max_y);
+			-> l0l2l5l6 on (!z_accel && z_hold && z <= max_z);
+			-> l0l2l4l7 on (!rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l2l5l6 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z);
+			-> l1l2l5l7 on (!x_accel && x_hold && x <= max_x && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l0l3l5l6 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l0l3l5l7 on (!y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l4l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y);
+			-> l1l3l4l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> l1l3l5l6 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z);
+			-> l1l3l5l7 on (!x_accel && x_hold && x <= max_x && !y_accel && y_hold && y <= max_y && !z_accel && z_hold && z <= max_z && !rpm_up && rpm_hold && rpm <= max_rpm);
+			-> violation on (x_accel && x >= max_x) recover x_accel:= 0;
+			-> violation on (y_accel && y >= max_x) recover y_accel:= 0;
+			-> violation on (z_accel && z >= max_z) recover z_accel:= 0;
+			-> violation on (rpm_up && rpm >= max_rpm) recover rpm_up:= 0;
+		}
+
+
+	}
+}
