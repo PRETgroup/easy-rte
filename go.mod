@@ -1,5 +1,5 @@
 module github.com/PRETgroup/easy-rte
 
-go 1.16
+go 1.22
 
-require github.com/PRETgroup/goFB v0.0.0-20200505213332-aceb47649107 // indirect
+require github.com/PRETgroup/goFB v0.0.0-20240530232900-e5fb1e482b2d // indirect

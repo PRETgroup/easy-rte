@@ -27,11 +27,11 @@ verilog_enf: $(PROJECT)_V
 
 easy-rte-c: rtec/* rtedef/*
 	go get github.com/PRETgroup/goFB/goFB
-	go build -o easy-rte-c -i ./rtec/main
+	go build -o easy-rte-c ./rtec/main
 
 easy-rte-parser: rteparser/* rtedef/*
 	go get github.com/PRETgroup/goFB/goFB
-	go build -o easy-rte-parser -i ./rteparser/main
+	go build -o easy-rte-parser ./rteparser/main
 
 run_cbmc: default 
 	cbmc example/$(PROJECT)/cbmc_main_$(PROJECT).c example/$(PROJECT)/F_$(PROJECT).c
