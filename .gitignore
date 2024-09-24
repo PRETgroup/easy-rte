@@ -10,6 +10,8 @@
 *.xml
 main/main
 
+bin/
+
 easy-rte-c
 easy-rte-parser
 
