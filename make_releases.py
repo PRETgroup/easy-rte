@@ -16,8 +16,8 @@ subprocess.run(["go", "get", "github.com/PRETgroup/goFB/goFB"], env=my_env)
   
 # Create easy-rte-c and easy-rte-parser executables for each platform
 for target in build_targets:
-    os.environ["GOOS"] = target[0]
-    os.environ["GOARCH"] = target[1]
+    my_env["GOOS"] = target[0]
+    my_env["GOARCH"] = target[1]
     print(f"Building for {target[0]} {target[1]}")
     output_filename_c = "easy-rte-c"
     output_filename_parser = "easy-rte-parser"
@@ -28,6 +28,7 @@ for target in build_targets:
     os.makedirs(f"bin/{target[0]}_{target[1]}", exist_ok=True)
     #build easy-rte-c from ./rtec/main e.g.
     # go build -o easy-rte-c ./rtec/main
+    
     subprocess.run(["go", "build", "-o", f"bin/{target[0]}_{target[1]}/{output_filename_c}", "./rtec/main"], env=my_env)
     #build easy-rte-parser from ./rteparser/main e.g.
     # go build -o easy-rte-parser ./rteparser/main
