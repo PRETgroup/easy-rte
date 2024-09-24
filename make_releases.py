@@ -34,7 +34,8 @@ for target in build_targets:
     # go build -o easy-rte-parser ./rteparser/main
     subprocess.run(["go", "build", "-o", f"bin/{target[0]}_{target[1]}/{output_filename_parser}", "./rteparser/main"], env=my_env)
     # zip the target directory
-    # zip -r bin/linux_amd64.zip bin/linux_amd64
-    subprocess.run(["zip", "-r", f"bin/{target[0]}_{target[1]}.zip", f"bin/{target[0]}_{target[1]}"], env=my_env)
+    # zip -r bin/linux_amd64.zip bin/linux_amd64 from the bin directory
+    subprocess.run(["zip", "-r", f"{target[0]}_{target[1]}.zip", f"{target[0]}_{target[1]}"], env=my_env, cwd="bin")
+    
 # done
 print("Done!")

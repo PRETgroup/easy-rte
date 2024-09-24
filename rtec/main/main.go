@@ -12,7 +12,7 @@ import (
 
 var (
 	inFileName  = flag.String("i", "", "Specifies the name of the source xml file to be compiled.")
-	outLocation = flag.String("o", "", "Specifies the name of the directory to put output files. If blank, uses current directory")
+	outLocation = flag.String("o", ".", "Specifies the name of the directory to put output files. If blank, uses current directory")
 	language    = flag.String("l", "c", "The output language")
 )
 
